@@ -12,8 +12,32 @@ export type Currency = (typeof currencies)[number]
 export const durationUnits = ['minutes', 'hours', 'days', 'weeks'] as const
 export type DurationUnit = (typeof durationUnits)[number]
 
-export const activityCategories = ['Adventure', 'Water sports', 'Paddlesports', 'Tours & cruises', 'Camping', 'Other'] as const
-export type ActivityCategory = (typeof activityCategories)[number]
+/**
+ * Activity master categories and the tags each offers. Copy of the backend list
+ * (backend src/modules/catalog/catalog.taxonomy.ts), which is what validation uses.
+ */
+export const activityTaxonomy = {
+  Adventure: ['Trekking', 'Hiking', 'Rappelling', 'Rock climbing', 'Zipline', 'Jungle safari', 'Cycling'],
+  'Water sports': ['Scuba diving', 'Snorkelling', 'Jet ski', 'Parasailing', 'Banana boat', 'Surfing'],
+  Paddlesports: ['Kayaking', 'Stand-up paddle', 'Canoeing', 'Rafting'],
+  'Tours & cruises': ['Island hopping', 'Backwater cruise', 'Sunset cruise', 'Boat tour', 'Sightseeing'],
+  Camping: ['Overnight camp', 'Glamping', 'Bonfire', 'Stargazing'],
+  Other: ['Wellness', 'Photography', 'Cultural', 'Workshop'],
+} as const
+
+export type ActivityCategory = keyof typeof activityTaxonomy
+export const activityCategories = Object.keys(activityTaxonomy) as ActivityCategory[]
+
+export const difficultyLevels = ['Easy', 'Moderate', 'Challenging', 'Extreme'] as const
+export type DifficultyLevel = (typeof difficultyLevels)[number]
+
+/** Index + 1 is the month number stored by the API (1 = January). */
+export const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const
+
+export interface GalleryImage { id: string, url: string }
+
+/** Uploaded itinerary PDF. */
+export interface ItineraryFile { url: string, fileName: string, sizeBytes: number }
 
 export const courseCategories = ['Paddlesports', 'Water safety', 'Diving', 'First aid & rescue', 'Instructor training', 'Other'] as const
 export type CourseCategory = (typeof courseCategories)[number]
@@ -35,7 +59,7 @@ interface CatalogItemBase {
   slug: string
   shortDescription: string
   description: string
-  /** Cover image (activity) or thumbnail (course): an https URL or site path, or null. */
+  /** Cover image (activity) or thumbnail (course): an https URL or site path, or null. For activities an uploaded image takes its place. */
   coverImage: string | null
   gallery: string[]
   price: number
@@ -52,10 +76,27 @@ interface CatalogItemBase {
 
 export interface Activity extends CatalogItemBase {
   kind: 'activity'
+  /** Master category. */
   category: ActivityCategory
+  /** Tags from the master category's list. */
+  tags: string[]
   locations: string[]
-  /** Participant limit per session, if the activity has one. */
-  capacity: number | null
+  /** Seats per time slot, if limited. */
+  totalSlots: number | null
+  highlights: string[]
+  /** Daily start times, "HH:MM" 24h, sorted. */
+  timeSlots: string[]
+  minAge: number | null
+  /** Metres. */
+  maxAltitude: number | null
+  difficulty: DifficultyLevel | null
+  /** 1 = January … 12 = December, sorted. */
+  bestSeasonMonths: number[]
+  /** Absolute URL of the uploaded image, if any (also used as `coverImage`). */
+  imageUrl: string | null
+  /** Uploaded gallery images in display order (absolute URLs; also listed in `gallery`). */
+  galleryImages: GalleryImage[]
+  itinerary: ItineraryFile | null
 }
 
 export interface CourseModule { id: string, title: string }
@@ -68,6 +109,8 @@ export interface Course extends CatalogItemBase {
   modules: CourseModule[]
   prerequisites: string
   instructor: string
+  imageUrl: string | null
+  galleryImages: GalleryImage[]
 }
 
 export type CatalogItem = Activity | Course
@@ -93,7 +136,14 @@ export interface CatalogFormValues {
   // Activity only
   /** Comma-separated. */
   locations: string
-  capacity: string
+  totalSlots: string
+  highlights: string[]
+  tags: string[]
+  timeSlots: string[]
+  minAge: string
+  maxAltitude: string
+  difficulty: string
+  bestSeasonMonths: number[]
   // Course only
   level: string
   modules: string[]

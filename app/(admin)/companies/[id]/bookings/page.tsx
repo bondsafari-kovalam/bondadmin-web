@@ -3,7 +3,7 @@
 import { RecentBookingsTable } from '@/components/companies/company-detail-cards'
 import { useCompanyPage } from '@/components/companies/company-page-context'
 import { UpcomingBookings } from '@/components/overview/upcoming-bookings'
-import { useCompanies } from '@/components/providers/companies-provider'
+import { useCompanies } from '@/hooks/use-companies'
 import { useDemo } from '@/components/providers/demo-provider'
 import { SectionCard } from '@/components/shared/section-card'
 import { useDashboardData } from '@/hooks/use-dashboard-data'

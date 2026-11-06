@@ -44,7 +44,7 @@ export function SectionCard<T = DashboardData>({ id, title, description, action,
   </Card>
 }
 
-function LoadingState({ minHeight }: { minHeight: number }) {
+export function LoadingState({ minHeight }: { minHeight: number }) {
   return <div role="status" aria-label="Loading" className="flex flex-col gap-3" style={{ minHeight }}>
     <Skeleton className="h-4 w-1/3 rounded-full" />
     <Skeleton className="w-full flex-1 rounded-xl" />

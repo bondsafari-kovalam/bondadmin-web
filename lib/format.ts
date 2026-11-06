@@ -11,6 +11,11 @@ export function count(value: number) { return value.toLocaleString('en-IN') }
 
 export function percent(value: number) { return `${value.toFixed(1)}%` }
 
+export function fileSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  return `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
 export function formatKpi(kpi: Pick<Kpi, 'format'>, value: number) {
   return kpi.format === 'money' ? money(value) : kpi.format === 'percent' ? percent(value) : count(value)
 }

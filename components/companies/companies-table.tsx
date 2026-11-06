@@ -19,17 +19,18 @@ interface CompaniesTableProps {
   sort: CompanySort
   onSort: (key: CompanySortKey) => void
   showRevenue: boolean
-  canEdit: boolean
+  /** Whether the user may edit this company (depends on their membership). */
+  canEdit: (id: Company['id']) => boolean
   onEdit: (company: Company) => void
 }
 
 const detailsHref = (company: Company) => `/companies/${encodeURIComponent(company.id)}`
 const lastActivity = (date: Date | null) => (date ? timeAgo(date, DEMO_NOW) : 'No activity yet')
 
-function Actions({ company, canEdit, onEdit }: { company: Company, canEdit: boolean, onEdit: (company: Company) => void }) {
+function Actions({ company, canEdit, onEdit }: { company: Company, canEdit: CompaniesTableProps['canEdit'], onEdit: (company: Company) => void }) {
   return <div className="flex items-center justify-end gap-1.5">
     <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs" nativeButton={false} render={<Link href={detailsHref(company)} aria-label={`View details for ${company.name}`} />}><Eye data-icon="inline-start" />View</Button>
-    {canEdit && <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => onEdit(company)} aria-label={`Edit ${company.name}`}><Pencil data-icon="inline-start" />Edit</Button>}
+    {canEdit(company.id) && <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => onEdit(company)} aria-label={`Edit ${company.name}`}><Pencil data-icon="inline-start" />Edit</Button>}
   </div>
 }
 

@@ -1,4 +1,4 @@
-import { activityCategories, availabilityStatuses, courseCategories, courseLevels, currencies, durationUnits, publicationStatuses, type CatalogFormValues, type CatalogItem, type CatalogKind } from '@/types/catalog'
+import { activityCategories, activityTaxonomy, availabilityStatuses, difficultyLevels, courseCategories, courseLevels, currencies, durationUnits, publicationStatuses, type CatalogFormValues, type CatalogItem, type CatalogKind } from '@/types/catalog'
 
 export type CatalogErrors = Partial<Record<keyof CatalogFormValues, string>>
 
@@ -33,8 +33,9 @@ export function validateCatalog(kind: CatalogKind, v: CatalogFormValues, sibling
   const categories: readonly string[] = kind === 'activity' ? activityCategories : courseCategories
   if (!categories.includes(v.category)) e.category = 'Choose a category.'
 
-  if (v.coverImage.trim() && !IMAGE_URL.test(v.coverImage.trim())) e.coverImage = 'Use an image URL starting with https:// or a site path starting with /.'
-  const gallery = v.gallery.split('\n').map((l) => l.trim()).filter(Boolean)
+  // Activities upload their image instead of entering a URL.
+  if (kind === 'course' && v.coverImage.trim() && !IMAGE_URL.test(v.coverImage.trim())) e.coverImage = 'Use an image URL starting with https:// or a site path starting with /.'
+  const gallery = kind === 'course' ? v.gallery.split('\n').map((l) => l.trim()).filter(Boolean) : []
   if (gallery.length > 8) e.gallery = 'Add at most 8 gallery images.'
   else if (gallery.some((g) => !IMAGE_URL.test(g))) e.gallery = 'Each line must be an image URL (https://…) or a site path (/…).'
 
@@ -56,8 +57,25 @@ export function validateCatalog(kind: CatalogKind, v: CatalogFormValues, sibling
   e.seoDescription = maxLength(v.seoDescription, 160, 'SEO description')
 
   if (kind === 'activity') {
-    const capacity = v.capacity.trim()
-    if (capacity && (!/^\d+$/.test(capacity) || Number(capacity) < 1 || Number(capacity) > 1000)) e.capacity = 'Enter a whole number from 1 to 1000, or leave empty.'
+    const wholeNumber = (value: string, min: number, max: number) => !value || (/^\d+$/.test(value) && Number(value) >= min && Number(value) <= max)
+    if (!wholeNumber(v.totalSlots.trim(), 1, 1000)) e.totalSlots = 'Enter a whole number from 1 to 1000, or leave empty.'
+    if (!wholeNumber(v.minAge.trim(), 0, 99)) e.minAge = 'Enter an age from 0 to 99, or leave empty.'
+    if (!wholeNumber(v.maxAltitude.trim(), 0, 9000)) e.maxAltitude = 'Enter metres from 0 to 9000, or leave empty.'
+    if (v.difficulty && !(difficultyLevels as readonly string[]).includes(v.difficulty)) e.difficulty = 'Choose a difficulty level.'
+
+    const highlights = v.highlights.map((h) => h.trim()).filter(Boolean)
+    if (highlights.length > 12) e.highlights = 'Add at most 12 highlights.'
+    else if (highlights.some((h) => h.length > 120)) e.highlights = 'Each highlight must be 120 characters or fewer.'
+
+    const allowedTags: readonly string[] = activityTaxonomy[v.category as keyof typeof activityTaxonomy] ?? []
+    if (v.tags.length > 10) e.tags = 'Choose at most 10 tags.'
+    else if (v.tags.some((t) => !allowedTags.includes(t))) e.tags = 'Some tags don’t belong to this master category.'
+
+    const slots = v.timeSlots.map((t) => t.trim()).filter(Boolean)
+    if (slots.length > 12) e.timeSlots = 'Add at most 12 time slots.'
+    else if (slots.some((t) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(t))) e.timeSlots = 'Use 24-hour times such as 06:30.'
+    else if (new Set(slots).size !== slots.length) e.timeSlots = 'Each time slot can appear only once.'
+
     const locations = v.locations.split(',').map((l) => l.trim()).filter(Boolean)
     if (locations.length > 10) e.locations = 'Add at most 10 locations.'
     else if (locations.some((l) => l.length > 60)) e.locations = 'Each location must be 60 characters or fewer.'

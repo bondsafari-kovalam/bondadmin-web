@@ -23,9 +23,12 @@ export interface TopBarProps {
   alerts: Alert[] | null
   scopeLabel: string
   crumbs: Crumb[]
+  /** Signed-in backend account; the name/avatar shown are still the demo user's. */
+  accountEmail?: string
+  onSignOut: () => void
 }
 
-export function TopBar({ user, role, onRoleChange, demoState, onDemoStateChange, alerts, scopeLabel, crumbs }: TopBarProps) {
+export function TopBar({ user, role, onRoleChange, demoState, onDemoStateChange, alerts, scopeLabel, crumbs, accountEmail, onSignOut }: TopBarProps) {
   return <header className="sticky top-0 z-10 flex h-[72px] items-center justify-between gap-3 bg-mint/85 px-4 backdrop-blur md:px-8">
     <div className="flex items-center gap-3">
       <MobileNav user={user} scopeLabel={scopeLabel} />
@@ -86,10 +89,10 @@ export function TopBar({ user, role, onRoleChange, demoState, onDemoStateChange,
           <ChevronDown className="hidden size-3.5 text-slate-400 md:block" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
-          <DropdownMenuGroup><DropdownMenuLabel>Demo account — not signed in</DropdownMenuLabel></DropdownMenuGroup>
+          <DropdownMenuGroup><DropdownMenuLabel className="truncate">{accountEmail ? `Signed in as ${accountEmail}` : 'Signed in'}</DropdownMenuLabel></DropdownMenuGroup>
           <DropdownMenuItem disabled><Settings />Account settings</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem disabled><LogOut />Sign out</DropdownMenuItem>
+          <DropdownMenuItem onClick={onSignOut}><LogOut />Sign out</DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

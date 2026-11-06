@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { useCompanies } from '@/components/providers/companies-provider'
+import { useCompanies } from '@/hooks/use-companies'
 import { EmptyState } from '@/components/shared/empty-state'
 import { SegmentedControl } from '@/components/shared/form-controls'
 import { StatusBadge } from '@/components/shared/status-badge'

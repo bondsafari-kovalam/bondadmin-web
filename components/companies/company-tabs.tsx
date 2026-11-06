@@ -9,6 +9,7 @@ export const companyTabs = [
   { segment: 'activities', label: 'Activities' },
   { segment: 'courses', label: 'Courses' },
   { segment: 'bookings', label: 'Bookings' },
+  { segment: 'inbox', label: 'Inbox' },
   { segment: 'team', label: 'Team & Administrators' },
   { segment: 'settings', label: 'Settings' },
 ] as const
