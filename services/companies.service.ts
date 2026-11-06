@@ -37,7 +37,7 @@ export interface CompanyPayload {
 const toStatus: Record<CompanyStatusDto, CompanyStatus> = { ACTIVE: 'Active', INACTIVE: 'Inactive' }
 const fromStatus: Record<CompanyStatus, CompanyStatusDto> = { Active: 'ACTIVE', Inactive: 'INACTIVE' }
 
-const palette = ['#d4a42e', '#3e5b56', '#1fb2a6', '#1b8fb5', '#e07a5f', '#7fa38f', '#9a7414', '#557670']
+const palette = ['#d4a42e', '#0a4a52', '#1fb2a6', '#1b8fb5', '#f2622e', '#7fa38f', '#9a7414', '#0f6b72']
 
 /** Stable avatar colour per company; the backend does not store one. */
 function colorFor(id: string) {

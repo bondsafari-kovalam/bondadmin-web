@@ -4,6 +4,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
+import { FaqEditor } from '@/components/catalog/faq-editor'
+import { OfferingEditor } from '@/components/catalog/offering-editor'
 import { ActivityImageField, GalleryField, ItineraryField, noGalleryChange, type FileChange, type GalleryChange } from '@/components/catalog/activity-file-fields'
 import { ChipSelect } from '@/components/shared/chip-select'
 import { FormSelect, optionsOf } from '@/components/shared/form-controls'
@@ -17,7 +19,7 @@ import { cn } from '@/lib/utils'
 import { toCatalogItem, toCatalogPayload, type ActivityFile, type CatalogItemDto } from '@/services/catalog.service'
 import { useAppDispatch } from '@/store/hooks'
 import { addCourseGalleryImage, addGalleryImage, createCatalogItem, removeActivityFile, removeCourseGalleryImage, removeCourseImage, removeGalleryImage, updateCatalogItem, uploadActivityFile, uploadCourseImage } from '@/store/slices/catalog-slice'
-import { activityCategories, activityTaxonomy, availabilityStatuses, courseCategories, courseLevels, currencies, difficultyLevels, durationUnits, monthNames, publicationStatuses, type ActivityCategory, type CatalogFormValues, type CatalogItem, type CatalogKind, type CourseLevel, type DifficultyLevel } from '@/types/catalog'
+import { activityCategories, activityNextSteps, activityTaxonomy, availabilityStatuses, courseCategories, courseLevels, currencies, difficultyLevels, durationUnits, monthNames, publicationStatuses, type ActivityCategory, type ActivityNextStep, type CatalogFormValues, type CatalogItem, type CatalogKind, type CourseLevel, type DifficultyLevel } from '@/types/catalog'
 import type { Company } from '@/types/company'
 
 export interface CatalogFormProps {
@@ -32,10 +34,11 @@ export interface CatalogFormProps {
 }
 
 const monthOptions = monthNames.map((label, i) => ({ value: i + 1, label }))
+const nextStepOptions = (Object.keys(activityNextSteps) as ActivityNextStep[]).map((value) => ({ value, label: activityNextSteps[value] }))
 const keep: FileChange = { kind: 'keep' }
 
 /** Free-text fields rendered with <Input> / <textarea>. */
-type TextKey = 'name' | 'slug' | 'shortDescription' | 'description' | 'coverImage' | 'gallery' | 'price' | 'durationValue' | 'totalSlots' | 'minAge' | 'maxAltitude' | 'locations' | 'prerequisites' | 'instructor' | 'seoTitle' | 'seoDescription'
+type TextKey = 'name' | 'slug' | 'shortDescription' | 'description' | 'coverImage' | 'gallery' | 'price' | 'durationValue' | 'totalSlots' | 'minAge' | 'maxAltitude' | 'locations' | 'prerequisites' | 'instructor' | 'seoTitle' | 'seoDescription' | 'websiteCategory' | 'imageAlt' | 'groupSize' | 'sessionFormat' | 'swimmingRequirement' | 'healthRequirement' | 'safetyEquipment' | 'safetySupervision' | 'safetyWeather'
 
 /** Backend error → form field. API paths such as `duration.value` or `modules.2` use the top-level name. */
 function serverErrors(error: ApiError | undefined): CatalogErrors {
@@ -53,7 +56,7 @@ function serverErrors(error: ApiError | undefined): CatalogErrors {
 }
 
 /** Form order, so the first invalid field gets focus. */
-const fieldOrder: (keyof CatalogFormValues)[] = ['name', 'slug', 'shortDescription', 'description', 'highlights', 'category', 'tags', 'level', 'durationValue', 'durationUnit', 'timeSlots', 'totalSlots', 'minAge', 'maxAltitude', 'difficulty', 'bestSeasonMonths', 'modules', 'prerequisites', 'instructor', 'price', 'currency', 'locations', 'coverImage', 'gallery', 'availability', 'publication', 'seoTitle', 'seoDescription']
+const fieldOrder: (keyof CatalogFormValues)[] = ['name', 'slug', 'shortDescription', 'description', 'highlights', 'category', 'tags', 'level', 'durationValue', 'durationUnit', 'timeSlots', 'totalSlots', 'minAge', 'maxAltitude', 'difficulty', 'bestSeasonMonths', 'websiteCategory', 'imageAlt', 'skillLevel', 'groupSize', 'sessionFormat', 'swimmingRequirement', 'healthRequirement', 'learningOutcomes', 'inclusions', 'whatToBring', 'safetyEquipment', 'safetySupervision', 'safetyWeather', 'faqs', 'relatedSlugs', 'nextSteps', 'modules', 'prerequisites', 'instructor', 'price', 'currency', 'locations', 'offerings', 'coverImage', 'gallery', 'availability', 'publication', 'seoTitle', 'seoDescription']
 
 function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: CatalogFormProps & { kind: CatalogKind }) {
   const { items } = useCatalog(company.id)
@@ -152,7 +155,7 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
     if (first) return focus(first)
 
     setSubmitting(true)
-    const payload = toCatalogPayload(kind, values)
+    const payload = toCatalogPayload(kind, values, item)
     const action = item
       ? await dispatch(updateCatalogItem({ companyId: company.id, kind, id: item.id, payload }))
       : await dispatch(createCatalogItem({ companyId: company.id, kind, payload }))
@@ -183,6 +186,9 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
 
   const isActivity = kind === 'activity'
   const tagOptions = (activityTaxonomy[values.category as ActivityCategory] ?? []).map((t) => ({ value: t, label: t }))
+  const relatedOptions = itemsFor(items, company.id, 'activity').filter((i) => i.id !== item?.id).map((i) => ({ value: i.slug, label: i.name }))
+  const list = (key: 'learningOutcomes' | 'inclusions' | 'whatToBring', itemLabel: string, addLabel: string) =>
+    <ListEditor id={id(key)} values={values[key]} onChange={(v) => set(key, v)} itemLabel={itemLabel} addLabel={addLabel} max={12} describedBy={describedBy(key)} invalid={!!errors[key]} />
 
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-2xl gap-0 overflow-hidden bg-white p-0">
@@ -266,6 +272,42 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
             </Field>
           </FormSection>}
 
+          {isActivity && <FormSection title="Website details (optional)">
+            <p className="-mt-2 text-[11px] text-slate-400">Only needed if this company’s website shows them. Leave empty otherwise.</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field id={id('websiteCategory')} label="Website category" error={errors.websiteCategory} hint="Label and filter on the website.">{text('websiteCategory', { placeholder: 'e.g. Guided experience', hint: true })}</Field>
+              <Field id={id('skillLevel')} label="Skill level" error={errors.skillLevel}>
+                <FormSelect id={id('skillLevel')} items={optionsOf(courseLevels)} value={values.skillLevel as CourseLevel | ''} onChange={(v) => set('skillLevel', v)} placeholder="Not set" invalid={!!errors.skillLevel} describedBy={describedBy('skillLevel')} />
+                {values.skillLevel && <button type="button" onClick={() => set('skillLevel', '')} className="w-fit text-[11px] text-slate-500 hover:text-forest hover:underline">Clear</button>}
+              </Field>
+              <Field id={id('groupSize')} label="Group size" error={errors.groupSize}>{text('groupSize', { placeholder: 'e.g. 2–8 guests' })}</Field>
+              <Field id={id('sessionFormat')} label="Session format" error={errors.sessionFormat}>{text('sessionFormat', { placeholder: 'e.g. Guided group session' })}</Field>
+            </div>
+            <Field id={id('imageAlt')} label="Image description" error={errors.imageAlt} hint="Describes the activity image for screen readers.">{text('imageAlt', { placeholder: 'e.g. Paddler in an orange kayak beside the reeds', hint: true })}</Field>
+            <label className="flex w-fit items-center gap-2 text-xs font-medium text-slate-700">
+              <input id={id('featured')} type="checkbox" checked={values.featured} onChange={(e) => set('featured', e.target.checked)} className="size-4 accent-forest" />Feature on the website
+            </label>
+            <Field id={id('swimmingRequirement')} label="Swimming ability" error={errors.swimmingRequirement}>{area('swimmingRequirement', 2)}</Field>
+            <Field id={id('healthRequirement')} label="Physical & health requirements" error={errors.healthRequirement}>{area('healthRequirement', 2)}</Field>
+            <Field id={id('learningOutcomes')} label="Learning outcomes" error={errors.learningOutcomes}>{list('learningOutcomes', 'Learning outcome', 'Add outcome')}</Field>
+            <Field id={id('inclusions')} label="What’s included" error={errors.inclusions}>{list('inclusions', 'Inclusion', 'Add inclusion')}</Field>
+            <Field id={id('whatToBring')} label="What to bring" error={errors.whatToBring}>{list('whatToBring', 'Item to bring', 'Add item')}</Field>
+            <Field id={id('safetyEquipment')} label="Equipment & buoyancy aids" error={errors.safetyEquipment}>{area('safetyEquipment', 2)}</Field>
+            <Field id={id('safetySupervision')} label="Guides & supervision" error={errors.safetySupervision}>{area('safetySupervision', 2)}</Field>
+            <Field id={id('safetyWeather')} label="Weather & session closures" error={errors.safetyWeather}>{area('safetyWeather', 2)}</Field>
+            <Field id={id('faqs')} label="FAQs" error={errors.faqs}>
+              <FaqEditor id={id('faqs')} values={values.faqs} onChange={(v) => set('faqs', v)} max={12} describedBy={describedBy('faqs')} invalid={!!errors.faqs} />
+            </Field>
+            <Field id={id('relatedSlugs')} label="Related activities" error={errors.relatedSlugs} hint="Up to 6 of this company’s other activities.">
+              <ChipSelect id={id('relatedSlugs')} label="Related activities" options={relatedOptions} selected={values.relatedSlugs} onChange={(v) => set('relatedSlugs', v)} max={6}
+                describedBy={describedBy('relatedSlugs', true)} invalid={!!errors.relatedSlugs} emptyText="This company has no other activities yet." />
+            </Field>
+            <Field id={id('nextSteps')} label="Next steps" error={errors.nextSteps} hint="Links shown at the end of the activity page.">
+              <ChipSelect id={id('nextSteps')} label="Next steps" options={nextStepOptions} selected={values.nextSteps} onChange={(v) => set('nextSteps', v)}
+                describedBy={describedBy('nextSteps', true)} invalid={!!errors.nextSteps} />
+            </Field>
+          </FormSection>}
+
           <FormSection title={isActivity ? 'Price & location' : 'Pricing'}>
             <div className="grid grid-cols-[1fr_120px] gap-3">
               <Field id={id('price')} label="Price" required error={errors.price} hint="Per guest. Use 0 for free.">{text('price', { inputMode: 'decimal', placeholder: '0', hint: true })}</Field>
@@ -274,6 +316,9 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
               </Field>
             </div>
             {isActivity && <Field id={id('locations')} label="Available locations" error={errors.locations} hint="Separate with commas.">{text('locations', { placeholder: 'e.g. Kovalam, Varkala', hint: true })}</Field>}
+            {isActivity && <Field id={id('offerings')} label="Location details" error={errors.offerings} hint="For websites that list each location separately. Empty price or duration uses the activity’s own.">
+              <OfferingEditor id={id('offerings')} values={values.offerings} onChange={(v) => set('offerings', v)} max={20} currency={values.currency} describedBy={describedBy('offerings', true)} invalid={!!errors.offerings} />
+            </Field>}
           </FormSection>
 
           {!isActivity && <FormSection title="Curriculum (optional)">

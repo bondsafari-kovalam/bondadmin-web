@@ -47,6 +47,56 @@ export type CourseLevel = (typeof courseLevels)[number]
 
 export type CatalogKind = 'activity' | 'course'
 
+/** Where a website sends guests after an activity page. */
+export const activityNextSteps = { academy: 'Academy', membership: 'Membership', 'season-pass': 'Season pass', 'longer-experience': 'Longer experience' } as const
+export type ActivityNextStep = keyof typeof activityNextSteps
+
+export interface ActivityFaq { question: string, answer: string }
+
+/** Confirmed: running there now. Preview: shown as an example until confirmed. Planned: location not open yet. */
+export const offeringStatuses = ['Confirmed', 'Preview', 'Planned'] as const
+export type OfferingStatus = (typeof offeringStatuses)[number]
+
+/** How an activity runs at one website location. */
+export interface ActivityOffering {
+  /** Slug of the location on the company's website. */
+  locationSlug: string
+  status: OfferingStatus
+  /** Per guest, in the activity's currency. Null uses the activity price. */
+  price: number | null
+  /** Free text such as "2 hours". Empty uses the activity duration. */
+  duration: string
+  meetingPoint: string
+}
+
+export type OfferingFormValues = Omit<ActivityOffering, 'price'> & { price: string }
+
+/** Extra website content. All optional: empty for companies whose website doesn't show it. */
+export interface ActivityWebsiteFields {
+  /** Label and filter on the company's own website, separate from the master category. */
+  websiteCategory: string
+  /** Describes the activity image for screen readers. */
+  imageAlt: string
+  /** Shown in the website's featured showcase. */
+  featured: boolean
+  skillLevel: CourseLevel | null
+  groupSize: string
+  sessionFormat: string
+  swimmingRequirement: string
+  healthRequirement: string
+  learningOutcomes: string[]
+  inclusions: string[]
+  whatToBring: string[]
+  safetyEquipment: string
+  safetySupervision: string
+  safetyWeather: string
+  faqs: ActivityFaq[]
+  /** Slugs of the same company's activities. */
+  relatedSlugs: string[]
+  nextSteps: ActivityNextStep[]
+  offerings: ActivityOffering[]
+}
+
 export interface Duration { value: number, unit: DurationUnit }
 
 /** Fields shared by activities and courses. Every record belongs to exactly one company. */
@@ -74,7 +124,7 @@ interface CatalogItemBase {
   updatedAt: Date
 }
 
-export interface Activity extends CatalogItemBase {
+export interface Activity extends CatalogItemBase, ActivityWebsiteFields {
   kind: 'activity'
   /** Master category. */
   category: ActivityCategory
@@ -116,7 +166,7 @@ export interface Course extends CatalogItemBase {
 export type CatalogItem = Activity | Course
 
 /** Raw form values (strings, as typed) for the Activity and Course forms. Kind-specific fields are ignored by the other kind. */
-export interface CatalogFormValues {
+export interface CatalogFormValues extends Omit<ActivityWebsiteFields, 'skillLevel' | 'offerings'> {
   name: string
   slug: string
   shortDescription: string
@@ -144,6 +194,8 @@ export interface CatalogFormValues {
   maxAltitude: string
   difficulty: string
   bestSeasonMonths: number[]
+  skillLevel: string
+  offerings: OfferingFormValues[]
   // Course only
   level: string
   modules: string[]

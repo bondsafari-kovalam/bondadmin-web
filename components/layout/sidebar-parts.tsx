@@ -21,14 +21,16 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   </Link>
 }
 
-/** Centered avatar card; switches to a single row on short screens. */
+/** Warm avatar colour that stands out against the teal panel. */
+export const avatarGradient = 'bg-gradient-to-br from-[#f7a23b] to-[#f2622e] font-bold text-white'
+
 export function Profile({ user, compact = false }: { user: DemoUser, compact?: boolean }) {
   if (compact) return <div className="flex justify-center py-3" title={`${user.name} · ${user.title}`}>
-    <Avatar className="size-10 ring-2 ring-white/15"><AvatarFallback className="bg-gold text-xs font-bold text-white">{user.initials}</AvatarFallback></Avatar>
+    <Avatar className="size-10 ring-2 ring-white/15"><AvatarFallback className={cn(avatarGradient, 'text-xs')}>{user.initials}</AvatarFallback></Avatar>
   </div>
-  return <div className={cn('mx-4 flex flex-col items-center rounded-2xl bg-white/5 px-3 py-4 text-center', '[@media(max-height:820px)]:flex-row [@media(max-height:820px)]:gap-3 [@media(max-height:820px)]:py-2.5 [@media(max-height:820px)]:text-left')}>
-    <Avatar className={cn('size-16 shrink-0 ring-4 ring-white/15', '[@media(max-height:820px)]:size-10 [@media(max-height:820px)]:ring-2')}><AvatarFallback className={cn('bg-gold text-lg font-bold text-white', '[@media(max-height:820px)]:text-xs')}>{user.initials}</AvatarFallback></Avatar>
-    <div className={cn('mt-3 min-w-0', '[@media(max-height:820px)]:mt-0')}>
+  return <div className="mx-4 flex items-center gap-3 rounded-full border border-white/10 bg-white/5 py-2 pr-4 pl-2 text-left">
+    <Avatar className="size-11 shrink-0 ring-2 ring-white/15"><AvatarFallback className={cn(avatarGradient, 'text-sm')}>{user.initials}</AvatarFallback></Avatar>
+    <div className="min-w-0">
       <div className="truncate text-sm font-bold uppercase tracking-wider text-white">{user.name}</div>
       <div className="truncate text-[11px] text-white/60">{user.title}</div>
     </div>
@@ -43,14 +45,14 @@ const isActive = (href: string | undefined, path: string) => !!href && (href ===
 function NavLink({ item, collapsed, tab, current, onNavigate }: { item: NavItem, collapsed: boolean, tab: boolean, current: string, onNavigate: (href: string) => void }) {
   const { label, icon: Icon, href } = item
   const active = isActive(href, current)
-  const className = cn('relative z-10 flex items-center gap-3 px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide transition-colors duration-300',
+  const className = cn('relative z-10 flex items-center gap-3 px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide transition-colors duration-300',
     collapsed && 'justify-center px-0',
     // In tab mode the mint background is the sliding indicator behind the link, not the link itself.
     active ? cn('text-forest', tab ? 'mr-0' : 'mr-4 rounded-full bg-mint')
-      : href ? 'mr-4 rounded-full text-white/85 hover:bg-white/10 hover:text-white'
-      : 'mr-4 cursor-not-allowed rounded-full text-white/45')
+      : href ? 'mr-4 rounded-full text-[#b7f3e8] hover:bg-white/10 hover:text-white'
+      : 'mr-4 cursor-not-allowed rounded-full text-[#b7f3e8]/60')
   const content = <>
-    <Icon className={cn('size-[17px] shrink-0 transition-colors duration-300', active ? 'text-gold' : href ? 'text-gold/80' : 'text-white/35')} />
+    <Icon className={cn('size-[17px] shrink-0 transition-colors duration-300', href ? 'text-gold' : 'text-[#b7f3e8]/50')} />
     {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
   </>
   return href
@@ -92,7 +94,7 @@ export function NavGroups({ role, collapsed, tab, onNavigate }: { role: Role, co
     {navGroupsFor(role).map((group, i) => <div key={group.label} className={cn('pl-4', i > 0 && 'mt-4')}>
       {collapsed
         ? (i > 0 && <div aria-hidden="true" className="mr-4 mb-3 border-t border-white/10" />)
-        : <div className="mb-1.5 px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">{group.label}</div>}
+        : <div className="mb-1.5 px-4 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b7f3e8]/60">{group.label}</div>}
       <ul className="flex flex-col gap-1" aria-label={collapsed ? group.label : undefined}>
         {group.items.map((item) => <li key={item.label}><NavLink item={item} collapsed={collapsed} tab={tab} current={current} onNavigate={(href) => { setPending(href); onNavigate?.() }} /></li>)}
       </ul>

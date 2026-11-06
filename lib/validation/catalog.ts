@@ -1,4 +1,4 @@
-import { activityCategories, activityTaxonomy, availabilityStatuses, difficultyLevels, courseCategories, courseLevels, currencies, durationUnits, publicationStatuses, type CatalogFormValues, type CatalogItem, type CatalogKind } from '@/types/catalog'
+import { activityCategories, activityNextSteps, activityTaxonomy, availabilityStatuses, difficultyLevels, courseCategories, courseLevels, currencies, durationUnits, offeringStatuses, publicationStatuses, type CatalogFormValues, type CatalogItem, type CatalogKind } from '@/types/catalog'
 
 export type CatalogErrors = Partial<Record<keyof CatalogFormValues, string>>
 
@@ -79,6 +79,44 @@ export function validateCatalog(kind: CatalogKind, v: CatalogFormValues, sibling
     const locations = v.locations.split(',').map((l) => l.trim()).filter(Boolean)
     if (locations.length > 10) e.locations = 'Add at most 10 locations.'
     else if (locations.some((l) => l.length > 60)) e.locations = 'Each location must be 60 characters or fewer.'
+
+    e.websiteCategory = maxLength(v.websiteCategory, 40, 'Website category')
+    e.imageAlt = maxLength(v.imageAlt, 160, 'Image description')
+    if (v.skillLevel && !(courseLevels as readonly string[]).includes(v.skillLevel)) e.skillLevel = 'Choose a skill level.'
+    e.groupSize = maxLength(v.groupSize, 80, 'Group size')
+    e.sessionFormat = maxLength(v.sessionFormat, 120, 'Session format')
+    e.swimmingRequirement = maxLength(v.swimmingRequirement, 500, 'Swimming ability')
+    e.healthRequirement = maxLength(v.healthRequirement, 500, 'Physical & health')
+    e.safetyEquipment = maxLength(v.safetyEquipment, 1000, 'Equipment & buoyancy aids')
+    e.safetySupervision = maxLength(v.safetySupervision, 1000, 'Guides & supervision')
+    e.safetyWeather = maxLength(v.safetyWeather, 1000, 'Weather & session closures')
+
+    const shortList = (values: string[], label: string) => {
+      const list = values.map((x) => x.trim()).filter(Boolean)
+      if (list.length > 12) return `Add at most 12 ${label}.`
+      return list.some((x) => x.length > 120) ? `Each of the ${label} must be 120 characters or fewer.` : undefined
+    }
+    e.learningOutcomes = shortList(v.learningOutcomes, 'learning outcomes')
+    e.inclusions = shortList(v.inclusions, 'inclusions')
+    e.whatToBring = shortList(v.whatToBring, 'items to bring')
+
+    const faqs = v.faqs.filter((f) => f.question.trim() || f.answer.trim())
+    if (faqs.length > 12) e.faqs = 'Add at most 12 FAQs.'
+    else if (faqs.some((f) => !f.question.trim())) e.faqs = 'Each answer needs a question.'
+    else if (faqs.some((f) => f.question.trim().length > 160 || f.answer.trim().length > 1000)) e.faqs = 'Keep questions to 160 characters and answers to 1000.'
+
+    if (v.relatedSlugs.length > 6) e.relatedSlugs = 'Choose at most 6 related activities.'
+    if (v.nextSteps.some((s) => !(s in activityNextSteps))) e.nextSteps = 'Choose a listed next step.'
+
+    const offerings = v.offerings.filter((o) => o.locationSlug.trim() || o.price.trim() || o.duration.trim() || o.meetingPoint.trim())
+    const offeringSlugs = offerings.map((o) => o.locationSlug.trim())
+    if (offerings.length > 20) e.offerings = 'Add at most 20 locations.'
+    else if (offeringSlugs.some((s) => !s)) e.offerings = 'Each row needs a location slug.'
+    else if (offeringSlugs.some((s) => !SLUG.test(s) || s.length > 80)) e.offerings = 'Location slugs use lowercase letters, numbers and single hyphens.'
+    else if (new Set(offeringSlugs).size !== offeringSlugs.length) e.offerings = 'Each location can appear only once.'
+    else if (offerings.some((o) => !offeringStatuses.includes(o.status))) e.offerings = 'Choose a status for each location.'
+    else if (offerings.some((o) => o.price.trim() && (!MONEY.test(o.price.trim()) || Number(o.price) > 10_000_000))) e.offerings = 'Enter each price as a number with up to 2 decimal places.'
+    else if (offerings.some((o) => o.duration.trim().length > 40 || o.meetingPoint.trim().length > 120)) e.offerings = 'Keep durations to 40 characters and meeting points to 120.'
   } else {
     if (!(courseLevels as readonly string[]).includes(v.level)) e.level = 'Choose a level.'
     const modules = v.modules.map((m) => m.trim()).filter(Boolean)

@@ -25,12 +25,13 @@ interface CompaniesTableProps {
 }
 
 const detailsHref = (company: Company) => `/companies/${encodeURIComponent(company.id)}`
+const actionClass = 'h-8 rounded-full bg-sea/10 px-3.5 text-xs text-forest hover:bg-sea/20 hover:text-forest'
 const lastActivity = (date: Date | null) => (date ? timeAgo(date, DEMO_NOW) : 'No activity yet')
 
 function Actions({ company, canEdit, onEdit }: { company: Company, canEdit: CompaniesTableProps['canEdit'], onEdit: (company: Company) => void }) {
   return <div className="flex items-center justify-end gap-1.5">
-    <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs" nativeButton={false} render={<Link href={detailsHref(company)} aria-label={`View details for ${company.name}`} />}><Eye data-icon="inline-start" />View</Button>
-    {canEdit(company.id) && <Button variant="outline" size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => onEdit(company)} aria-label={`Edit ${company.name}`}><Pencil data-icon="inline-start" />Edit</Button>}
+    <Button variant="ghost" size="sm" className={actionClass} nativeButton={false} render={<Link href={detailsHref(company)} aria-label={`View details for ${company.name}`} />}><Eye data-icon="inline-start" />View</Button>
+    {canEdit(company.id) && <Button variant="ghost" size="sm" className={actionClass} onClick={() => onEdit(company)} aria-label={`Edit ${company.name}`}><Pencil data-icon="inline-start" />Edit</Button>}
   </div>
 }
 
@@ -54,22 +55,22 @@ export function CompaniesTable({ records, sort, onSort, showRevenue, canEdit, on
   return <>
     {/* Tablet and desktop */}
     <Table aria-label="Companies" className="hidden min-w-[680px] text-xs md:table">
-      <TableHeader><TableRow className="border-slate-100 hover:bg-transparent">
-        {columns.map((c) => <TableHead key={c.key} className={cn('px-3 text-xs font-medium text-slate-400', c.className)} aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : 'none'}>
-          <button type="button" onClick={() => onSort(c.key)} className={cn('inline-flex items-center gap-1 rounded-md hover:text-slate-600', sort.key === c.key && 'text-slate-700')}>
+      <TableHeader className="[&_tr]:border-0"><TableRow className="bg-[#eef8f6] hover:bg-[#eef8f6]">
+        {columns.map((c) => <TableHead key={c.key} className={cn('px-3 text-xs font-semibold text-ink first:rounded-l-xl', c.className)} aria-sort={sort.key === c.key ? (sort.desc ? 'descending' : 'ascending') : 'none'}>
+          <button type="button" onClick={() => onSort(c.key)} className={cn('inline-flex items-center gap-1 rounded-md hover:text-forest-light')}>
             {c.label}{sort.key === c.key ? (sort.desc ? <ArrowDown className="size-3" /> : <ArrowUp className="size-3" />) : <ArrowUpDown className="size-3 opacity-40" />}
           </button>
         </TableHead>)}
-        <TableHead className="pr-6 text-right text-xs font-medium text-slate-400">Actions</TableHead>
+        <TableHead className="rounded-r-xl pr-6 text-right text-xs font-semibold text-ink">Actions</TableHead>
       </TableRow></TableHeader>
       <TableBody>
-        {records.map(({ company, metrics }) => <TableRow key={company.id} onClick={(e) => openRow(e, company)} className="cursor-pointer border-slate-50 hover:bg-gold-soft/40">
+        {records.map(({ company, metrics }) => <TableRow key={company.id} onClick={(e) => openRow(e, company)} className="cursor-pointer border-0 even:bg-[#f6fbfa] hover:bg-sea/5">
           <TableCell className="py-3 pr-3 pl-6">
             <div className="flex items-center gap-3">
               <CompanyAvatar company={company} />
               <div className="min-w-0">
-                <Link href={detailsHref(company)} className="block truncate font-semibold text-slate-700 hover:text-forest hover:underline">{company.name}</Link>
-                <span className="text-[11px] text-slate-400">{company.code}</span>
+                <Link href={detailsHref(company)} className="block truncate font-semibold text-ink hover:text-forest-light hover:underline">{company.name}</Link>
+                <span className="text-[11px] font-medium text-[#13857b]">{company.code}</span>
               </div>
             </div>
           </TableCell>

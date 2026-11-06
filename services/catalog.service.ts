@@ -1,6 +1,7 @@
 import { API_URL, apiClient } from '@/lib/api/client'
 import type { ApiEnvelope, ApiPage } from '@/lib/api/types'
-import type { ActivityCategory, AvailabilityStatus, CatalogFormValues, CatalogItem, CatalogKind, CourseCategory, CourseLevel, Currency, DifficultyLevel, DurationUnit, PublicationStatus } from '@/types/catalog'
+import { toFormValues } from '@/lib/catalog'
+import type { ActivityCategory, ActivityWebsiteFields, AvailabilityStatus, CatalogFormValues, CatalogItem, CatalogKind, CourseCategory, CourseLevel, Currency, DifficultyLevel, DurationUnit, OfferingStatus, PublicationStatus } from '@/types/catalog'
 
 // ---- API shapes (backend `Activity` / `Course` schemas) ------------------------------
 
@@ -9,6 +10,7 @@ type AvailabilityDto = 'AVAILABLE' | 'SEASONAL' | 'UNAVAILABLE'
 type DurationUnitDto = 'MINUTES' | 'HOURS' | 'DAYS' | 'WEEKS'
 type CourseLevelDto = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'ALL_LEVELS'
 type DifficultyDto = 'EASY' | 'MODERATE' | 'CHALLENGING' | 'EXTREME'
+type OfferingStatusDto = 'CONFIRMED' | 'PREVIEW' | 'PLANNED'
 
 interface CatalogItemDtoBase {
   id: string
@@ -31,7 +33,10 @@ interface CatalogItemDtoBase {
   updatedAt: string
 }
 
-export interface ActivityDto extends CatalogItemDtoBase {
+/** Website fields are optional here: an API version that doesn't store them leaves them out. */
+export interface ActivityDto extends CatalogItemDtoBase, Partial<Omit<ActivityWebsiteFields, 'skillLevel' | 'offerings'>> {
+  skillLevel?: CourseLevelDto | null
+  offerings?: { locationSlug: string, status: OfferingStatusDto, price: number | null, duration: string, meetingPoint: string }[]
   category: ActivityCategory
   locations: string[]
   totalSlots: number | null
@@ -68,6 +73,7 @@ const availability = { AVAILABLE: 'Available', SEASONAL: 'Seasonal', UNAVAILABLE
 const durationUnit = { MINUTES: 'minutes', HOURS: 'hours', DAYS: 'days', WEEKS: 'weeks' } as const satisfies Record<DurationUnitDto, DurationUnit>
 const difficulty = { EASY: 'Easy', MODERATE: 'Moderate', CHALLENGING: 'Challenging', EXTREME: 'Extreme' } as const satisfies Record<DifficultyDto, DifficultyLevel>
 const courseLevel = { BEGINNER: 'Beginner', INTERMEDIATE: 'Intermediate', ADVANCED: 'Advanced', ALL_LEVELS: 'All levels' } as const satisfies Record<CourseLevelDto, CourseLevel>
+const offeringStatus = { CONFIRMED: 'Confirmed', PREVIEW: 'Preview', PLANNED: 'Planned' } as const satisfies Record<OfferingStatusDto, OfferingStatus>
 
 const invert = <K extends string, V extends string>(map: Record<K, V>) => Object.fromEntries(Object.entries(map).map(([k, v]) => [v, k])) as Record<V, K>
 const toPublicationDto = invert(publication)
@@ -75,8 +81,32 @@ const toAvailabilityDto = invert(availability)
 const toDurationUnitDto = invert(durationUnit)
 const toCourseLevelDto = invert(courseLevel)
 const toDifficultyDto = invert(difficulty)
+const toOfferingStatusDto = invert(offeringStatus)
 
 const apiUrl = (path: string) => new URL(path, API_URL).toString()
+
+function toWebsiteFields(dto: ActivityDto): ActivityWebsiteFields {
+  return {
+    websiteCategory: dto.websiteCategory ?? '',
+    imageAlt: dto.imageAlt ?? '',
+    featured: dto.featured ?? false,
+    skillLevel: dto.skillLevel ? courseLevel[dto.skillLevel] : null,
+    groupSize: dto.groupSize ?? '',
+    sessionFormat: dto.sessionFormat ?? '',
+    swimmingRequirement: dto.swimmingRequirement ?? '',
+    healthRequirement: dto.healthRequirement ?? '',
+    learningOutcomes: dto.learningOutcomes ?? [],
+    inclusions: dto.inclusions ?? [],
+    whatToBring: dto.whatToBring ?? [],
+    safetyEquipment: dto.safetyEquipment ?? '',
+    safetySupervision: dto.safetySupervision ?? '',
+    safetyWeather: dto.safetyWeather ?? '',
+    faqs: dto.faqs ?? [],
+    relatedSlugs: dto.relatedSlugs ?? [],
+    nextSteps: dto.nextSteps ?? [],
+    offerings: (dto.offerings ?? []).map((o) => ({ ...o, status: offeringStatus[o.status] })),
+  }
+}
 
 export function toCatalogItem(dto: CatalogItemDto): CatalogItem {
   const base = {
@@ -111,7 +141,7 @@ export function toCatalogItem(dto: CatalogItemDto): CatalogItem {
   }
   const imageUrl = dto.imageUrl ? apiUrl(dto.imageUrl) : null
   return {
-    ...base, kind: 'activity', category: dto.category, tags: dto.tags, locations: dto.locations, totalSlots: dto.totalSlots,
+    ...base, ...toWebsiteFields(dto), kind: 'activity', category: dto.category, tags: dto.tags, locations: dto.locations, totalSlots: dto.totalSlots,
     highlights: dto.highlights, timeSlots: dto.timeSlots, minAge: dto.minAge, maxAltitude: dto.maxAltitude,
     difficulty: dto.difficulty ? difficulty[dto.difficulty] : null, bestSeasonMonths: dto.bestSeasonMonths,
     // The uploaded image replaces the cover URL everywhere the admin shows a thumbnail.
@@ -125,9 +155,46 @@ export function toCatalogItem(dto: CatalogItemDto): CatalogItem {
 
 const optionalNumber = (text: string) => (text.trim() ? Number(text) : null)
 const lines = (text: string) => text.split('\n').map((l) => l.trim()).filter(Boolean)
+const cleanList = (list: string[]) => list.map((l) => l.trim()).filter(Boolean)
 
-/** Validated form values → request body. Every field is sent, so an edit can also clear values. */
-export function toCatalogPayload(kind: CatalogKind, v: CatalogFormValues) {
+function websitePayload(v: CatalogFormValues) {
+  return {
+    websiteCategory: v.websiteCategory.trim(),
+    imageAlt: v.imageAlt.trim(),
+    featured: v.featured,
+    skillLevel: v.skillLevel ? toCourseLevelDto[v.skillLevel as CourseLevel] : null,
+    groupSize: v.groupSize.trim(),
+    sessionFormat: v.sessionFormat.trim(),
+    swimmingRequirement: v.swimmingRequirement.trim(),
+    healthRequirement: v.healthRequirement.trim(),
+    learningOutcomes: cleanList(v.learningOutcomes),
+    inclusions: cleanList(v.inclusions),
+    whatToBring: cleanList(v.whatToBring),
+    safetyEquipment: v.safetyEquipment.trim(),
+    safetySupervision: v.safetySupervision.trim(),
+    safetyWeather: v.safetyWeather.trim(),
+    faqs: v.faqs.map((f) => ({ question: f.question.trim(), answer: f.answer.trim() })).filter((f) => f.question),
+    relatedSlugs: v.relatedSlugs,
+    nextSteps: v.nextSteps,
+    offerings: v.offerings.filter((o) => o.locationSlug.trim()).map((o) => ({
+      locationSlug: o.locationSlug.trim(),
+      status: toOfferingStatusDto[o.status],
+      price: optionalNumber(o.price),
+      duration: o.duration.trim(),
+      meetingPoint: o.meetingPoint.trim(),
+    })),
+  }
+}
+
+const noWebsiteDetails = JSON.stringify(websitePayload(toFormValues(null, 'activity')))
+const hasWebsiteDetails = (v: CatalogFormValues) => JSON.stringify(websitePayload(v)) !== noWebsiteDetails
+
+/**
+ * Validated form values → request body. Every field is sent, so an edit can also clear values.
+ * The exception is website details: the API rejects keys it doesn't know, so they are sent only
+ * when the form or the saved record `item` has some, keeping other companies' saves unchanged.
+ */
+export function toCatalogPayload(kind: CatalogKind, v: CatalogFormValues, item: CatalogItem | null = null) {
   const base = {
     name: v.name.trim(),
     slug: v.slug.trim(),
@@ -161,6 +228,7 @@ export function toCatalogPayload(kind: CatalogKind, v: CatalogFormValues) {
     maxAltitude: optionalNumber(v.maxAltitude),
     difficulty: v.difficulty ? toDifficultyDto[v.difficulty as DifficultyLevel] : null,
     bestSeasonMonths: v.bestSeasonMonths,
+    ...(hasWebsiteDetails(v) || (item && hasWebsiteDetails(toFormValues(item, kind))) ? websitePayload(v) : {}),
   }
 }
 

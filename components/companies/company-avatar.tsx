@@ -6,7 +6,7 @@ import type { Company } from '@/types/company'
 
 const sizes = {
   sm: 'size-5 rounded-md text-[7px]',
-  md: 'size-9 rounded-xl text-[10px]',
+  md: 'size-10 rounded-full text-[11px]',
   lg: 'size-16 rounded-2xl text-sm',
 }
 

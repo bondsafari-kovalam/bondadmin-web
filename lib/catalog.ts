@@ -38,6 +38,8 @@ export function toFormValues(item: CatalogItem | null, kind: CatalogKind): Catal
     name: '', slug: '', shortDescription: '', description: '', category: '', coverImage: '', gallery: '', price: '', currency: 'INR',
     durationValue: '', durationUnit: kind === 'course' ? 'days' : 'hours', availability: 'Available', publication: 'Draft', seoTitle: '', seoDescription: '',
     locations: '', totalSlots: '', highlights: [], tags: [], timeSlots: [], minAge: '', maxAltitude: '', difficulty: '', bestSeasonMonths: [],
+    websiteCategory: '', imageAlt: '', featured: false, skillLevel: '', groupSize: '', sessionFormat: '', swimmingRequirement: '', healthRequirement: '',
+    learningOutcomes: [], inclusions: [], whatToBring: [], safetyEquipment: '', safetySupervision: '', safetyWeather: '', faqs: [], relatedSlugs: [], nextSteps: [], offerings: [],
     level: '', modules: [], prerequisites: '', instructor: '',
   }
   if (!item) return empty
@@ -54,6 +56,12 @@ export function toFormValues(item: CatalogItem | null, kind: CatalogKind): Catal
         highlights: item.highlights, tags: item.tags, timeSlots: item.timeSlots,
         minAge: item.minAge === null ? '' : String(item.minAge), maxAltitude: item.maxAltitude === null ? '' : String(item.maxAltitude),
         difficulty: item.difficulty ?? '', bestSeasonMonths: item.bestSeasonMonths,
+        websiteCategory: item.websiteCategory, imageAlt: item.imageAlt, featured: item.featured, skillLevel: item.skillLevel ?? '',
+        groupSize: item.groupSize, sessionFormat: item.sessionFormat, swimmingRequirement: item.swimmingRequirement, healthRequirement: item.healthRequirement,
+        learningOutcomes: item.learningOutcomes, inclusions: item.inclusions, whatToBring: item.whatToBring,
+        safetyEquipment: item.safetyEquipment, safetySupervision: item.safetySupervision, safetyWeather: item.safetyWeather,
+        faqs: item.faqs, relatedSlugs: item.relatedSlugs, nextSteps: item.nextSteps,
+        offerings: item.offerings.map((o) => ({ ...o, price: o.price === null ? '' : String(o.price) })),
       }
       : { level: item.level, modules: item.modules.map((m) => m.title), prerequisites: item.prerequisites, instructor: item.instructor }),
   }

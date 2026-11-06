@@ -31,8 +31,8 @@ export function SectionCard<T = DashboardData>({ id, title, description, action,
   return <Card id={id} className={cn(cardClass, 'min-w-0 scroll-mt-24', className)}>
     <CardHeader className="flex flex-row items-start justify-between gap-3 px-6 pt-1 pb-1">
       <div className="min-w-0">
-        <CardTitle className="text-[15px] font-semibold text-ink">{title}</CardTitle>
-        {description && <p className="mt-1 text-xs text-slate-400">{description}</p>}
+        <CardTitle className="text-base font-bold text-ink">{title}</CardTitle>
+        {description && <><p className="mt-1 text-xs text-slate-500">{description}</p><span aria-hidden="true" className="mt-2 block h-0.5 w-24 rounded-full bg-gradient-to-r from-sea to-transparent" /></>}
       </div>
       {action && result.status === 'ready' && <div className="flex shrink-0 items-center gap-2">{action}</div>}
     </CardHeader>

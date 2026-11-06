@@ -34,6 +34,8 @@ export function CatalogPreviewDialog({ item, company, onOpenChange }: { item: Ca
             {item.maxAltitude !== null && <div><dt className="flex items-center gap-1 text-slate-400"><Mountain className="size-3" />Max altitude</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.maxAltitude.toLocaleString('en-IN')} m</dd></div>}
             {item.bestSeasonMonths.length > 0 && <div><dt className="flex items-center gap-1 text-slate-400"><CalendarDays className="size-3" />Best season</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.bestSeasonMonths.map((m) => monthNames[m - 1]).join(', ')}</dd></div>}
             {item.locations.length > 0 && <div><dt className="flex items-center gap-1 text-slate-400"><MapPin className="size-3" />Locations</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.locations.join(', ')}</dd></div>}
+            {item.skillLevel && <div><dt className="flex items-center gap-1 text-slate-400"><GraduationCap className="size-3" />Skill level</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.skillLevel}</dd></div>}
+            {item.groupSize && <div><dt className="flex items-center gap-1 text-slate-400"><Users className="size-3" />Group size</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.groupSize}</dd></div>}
           </>}
           {item.kind === 'course' && <>
             <div><dt className="flex items-center gap-1 text-slate-400"><GraduationCap className="size-3" />Level</dt><dd className="mt-0.5 font-semibold text-slate-700">{item.level}</dd></div>
@@ -44,6 +46,18 @@ export function CatalogPreviewDialog({ item, company, onOpenChange }: { item: Ca
         {item.kind === 'activity' && item.highlights.length > 0 && <div>
           <h3 className="mb-2 text-xs font-semibold text-slate-700">Highlights</h3>
           <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">{item.highlights.map((h) => <li key={h}>{h}</li>)}</ul>
+        </div>}
+        {item.kind === 'activity' && ([['Learning outcomes', item.learningOutcomes], ['What’s included', item.inclusions], ['What to bring', item.whatToBring]] as const).map(([title, list]) => list.length > 0 && <div key={title}>
+          <h3 className="mb-2 text-xs font-semibold text-slate-700">{title}</h3>
+          <ul className="list-disc space-y-1 pl-5 text-sm text-slate-600">{list.map((entry) => <li key={entry}>{entry}</li>)}</ul>
+        </div>)}
+        {item.kind === 'activity' && item.offerings.length > 0 && <div>
+          <h3 className="mb-2 text-xs font-semibold text-slate-700">Location details</h3>
+          <ul className="space-y-1 text-sm text-slate-600">{item.offerings.map((o) => <li key={o.locationSlug}><span className="font-medium text-slate-700">{o.locationSlug}</span> · {o.status} · {formatPrice(o.price ?? item.price, item.currency)} · {o.duration || formatDuration(item.duration)}{o.meetingPoint && ` · ${o.meetingPoint}`}</li>)}</ul>
+        </div>}
+        {item.kind === 'activity' && item.faqs.length > 0 && <div>
+          <h3 className="mb-2 text-xs font-semibold text-slate-700">FAQs</h3>
+          <dl className="space-y-2 text-sm">{item.faqs.map((f) => <div key={f.question}><dt className="font-medium text-slate-700">{f.question}</dt>{f.answer && <dd className="text-slate-600">{f.answer}</dd>}</div>)}</dl>
         </div>}
         {item.kind === 'activity' && item.itinerary && <a href={item.itinerary.url} className="flex w-fit items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-medium text-forest hover:bg-slate-50"><FileText className="size-3.5" />Download itinerary ({item.itinerary.fileName})</a>}
         {item.kind === 'course' && item.modules.length > 0 && <div>

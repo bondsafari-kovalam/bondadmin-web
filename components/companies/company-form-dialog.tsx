@@ -143,7 +143,7 @@ export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
           <CompanyLogoField currentUrl={company?.logoUrl} change={logo} onChange={setLogo} error={logoError} onError={setLogoError}
-            code={input.code.trim().toUpperCase()} color={company?.color ?? '#3e5b56'} disabled={submitting} onBusyChange={setLogoBusy} />
+            code={input.code.trim().toUpperCase()} color={company?.color ?? '#0a4a52'} disabled={submitting} onBusyChange={setLogoBusy} />
           <Field id="company-name" label="Company name" required error={errors.name}>{textInput('name', { placeholder: 'e.g. Reef Divers' })}</Field>
           <div className="grid grid-cols-2 gap-3">
             <Field id="company-code" label="Code" required error={errors.code} hint={lockIdentity ? 'Only the owner can change this.' : '2–5 characters, unique.'}>{textInput('code', { placeholder: 'RD', disabled: lockIdentity, hint: true, className: 'uppercase' })}</Field>

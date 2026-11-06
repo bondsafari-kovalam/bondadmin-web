@@ -58,7 +58,7 @@ function ShellFrame({ children }: { children: ReactNode }) {
     if (tab) crumbs.push({ label: tabNames[tab] ?? tab })
   }
 
-  return <div className="flex min-h-screen bg-mint text-ink [color-scheme:light]">
+  return <div className="app-canvas flex min-h-screen text-ink [color-scheme:light]">
     <Sidebar user={user} scopeLabel={scopeLabel} />
     <div className="min-w-0 flex-1">
       <TopBar user={user} role={role} onRoleChange={setRole} demoState={demoState} onDemoStateChange={setDemoState} alerts={alerts} scopeLabel={scopeLabel} crumbs={crumbs}

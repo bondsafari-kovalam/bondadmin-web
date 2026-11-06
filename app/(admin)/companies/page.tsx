@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Info, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CompaniesTable } from '@/components/companies/companies-table'
 import { CompanyFormDialog } from '@/components/companies/company-form-dialog'
@@ -61,15 +61,15 @@ export default function CompaniesPage() {
       actions={<>
         <SearchInput value={query} onChange={setQuery} label="Search companies by name or code" placeholder="Search by company name or code" className="w-full sm:w-[300px]" />
         <FilterSelect label="Filter by status" items={statusItems} value={status} onChange={setStatus} className="w-[150px]" />
-        {canCreateCompany && <Button onClick={() => openForm(null)} className="h-10 rounded-full bg-forest px-5 text-xs hover:bg-forest-light"><Plus data-icon="inline-start" />Add Company</Button>}
+        {canCreateCompany && <Button onClick={() => openForm(null)} className="h-10 rounded-full bg-gradient-to-r from-forest-dark to-[#0f7c86] px-5 text-xs shadow-md hover:opacity-90"><Plus data-icon="inline-start" />Add Company</Button>}
       </>} />
 
     {notice && <NoticeBanner message={notice} onDismiss={() => setNotice(null)} />}
 
     <CompanySummaryCards summary={records ? summarize(records) : null} showRevenue={permissions.viewRevenue} />
-    {records && <p className="mt-2 text-[11px] text-slate-400">Totals cover all {records.length} {records.length === 1 ? 'company' : 'companies'} you can access, and aren&apos;t affected by search or filters. Bookings and revenue use the last 30 days, as on the Overview.</p>}
+    {records && <p className="mt-3 flex items-start gap-1.5 text-[11px] text-slate-500"><Info aria-hidden="true" className="mt-px size-3.5 shrink-0 text-sea" /><span>Totals cover all {records.length} {records.length === 1 ? 'company' : 'companies'} you can access, and aren&apos;t affected by search or filters. Bookings and revenue use the last 30 days, as on the Overview.</span></p>}
 
-    <SectionCard className="mt-6" title="All companies" description={records ? `Showing ${visible.length} of ${records.length}` : undefined} result={result} minHeight={320} contentClassName="px-3 md:px-0"
+    <SectionCard className="mt-6" title="All companies" description={records ? `Showing ${visible.length} of ${records.length}` : undefined} result={result} minHeight={320} contentClassName="px-3 md:px-4"
       isEmpty={(d) => d.length === 0} emptyText={canCreateCompany ? 'No companies yet. Use “Add Company” to create the first one.' : 'No companies are assigned to your role.'}>
       {() => visible.length === 0
         ? <div className="px-3 md:px-6"><EmptyState minHeight={220} text={`No companies match${query.trim() ? ` “${query.trim()}”` : ''}${status !== 'all' ? ` with status ${status}` : ''}.`} />

@@ -8,14 +8,13 @@ import { sessionExpired, tokenRefreshed } from '@/store/slices/auth-slice'
 
 /** Creates the Redux store once per tab and connects the API client to it. */
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [store] = useState(() => {
-    const created = makeStore()
-    configureApiClient({
-      getAccessToken: () => created.getState().auth.accessToken,
-      onTokenRefreshed: (token) => created.dispatch(tokenRefreshed(token)),
-      onSessionExpired: () => created.dispatch(sessionExpired()),
-    })
-    return created
+  const [store] = useState(() => makeStore())
+  // Keep this out of the initializer: Strict Mode runs it twice and keeps the first result,
+  // which would leave the API client bound to the discarded store (and a null token).
+  configureApiClient({
+    getAccessToken: () => store.getState().auth.accessToken,
+    onTokenRefreshed: (token) => store.dispatch(tokenRefreshed(token)),
+    onSessionExpired: () => store.dispatch(sessionExpired()),
   })
   return <Provider store={store}>{children}</Provider>
 }
