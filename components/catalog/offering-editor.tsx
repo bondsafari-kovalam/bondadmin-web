@@ -26,13 +26,13 @@ export function OfferingEditor({ id, values, onChange, max, currency, describedB
   return <div className="flex flex-col gap-2">
     {values.length > 0 && <ol className="flex flex-col gap-3" aria-describedby={describedBy}>
       {values.map((row, i) => <li key={i} className="flex items-start gap-2 rounded-xl border border-slate-100 p-2.5">
-        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
-          <Input id={i === 0 ? id : undefined} aria-label={`Location slug ${i + 1}`} aria-invalid={invalid || undefined} value={row.locationSlug} placeholder="Location slug, e.g. kovalam" autoComplete="off"
+        <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+          <Input id={i === 0 ? id : undefined} aria-label={`Location slug ${i + 1}`} aria-invalid={invalid || undefined} value={row.locationSlug} placeholder="Slug, e.g. kovalam" autoComplete="off"
             onChange={(e) => update(i, { locationSlug: e.target.value.toLowerCase() })} className="h-10 rounded-xl font-mono text-sm" />
           <FormSelect id={`${id}-status-${i}`} items={optionsOf(offeringStatuses)} value={row.status} onChange={(status) => update(i, { status })} />
           <Input aria-label={`Price ${i + 1}`} inputMode="decimal" value={row.price} placeholder={`Price (${currency})`} onChange={(e) => update(i, { price: e.target.value })} className="h-10 rounded-xl text-sm" />
           <Input aria-label={`Duration ${i + 1}`} value={row.duration} placeholder="Duration, e.g. 2 hours" onChange={(e) => update(i, { duration: e.target.value })} className="h-10 rounded-xl text-sm" />
-          <Input aria-label={`Meeting point ${i + 1}`} value={row.meetingPoint} placeholder="Meeting point" onChange={(e) => update(i, { meetingPoint: e.target.value })} className="h-10 rounded-xl text-sm sm:col-span-2" />
+          <Input aria-label={`Meeting point ${i + 1}`} value={row.meetingPoint} placeholder="Meeting point" onChange={(e) => update(i, { meetingPoint: e.target.value })} className="h-10 rounded-xl text-sm sm:col-span-2 lg:col-span-1" />
         </div>
         <Button type="button" variant="ghost" size="icon" aria-label={`Remove location ${i + 1}`} onClick={() => onChange(values.filter((_, j) => j !== i))}><Trash2 className="size-4 text-slate-400" /></Button>
       </li>)}

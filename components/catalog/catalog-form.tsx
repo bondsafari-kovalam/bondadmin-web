@@ -36,6 +36,9 @@ export interface CatalogFormProps {
 const monthOptions = monthNames.map((label, i) => ({ value: i + 1, label }))
 const nextStepOptions = (Object.keys(activityNextSteps) as ActivityNextStep[]).map((value) => ({ value, label: activityNextSteps[value] }))
 const keep: FileChange = { kind: 'keep' }
+/** Fields stack on phones and tablets and sit side by side on desktop. */
+const row2 = 'grid grid-cols-1 gap-4 lg:grid-cols-2'
+const row3 = 'grid grid-cols-1 gap-4 lg:grid-cols-3'
 
 /** Free-text fields rendered with <Input> / <textarea>. */
 type TextKey = 'name' | 'slug' | 'shortDescription' | 'description' | 'coverImage' | 'gallery' | 'price' | 'durationValue' | 'totalSlots' | 'minAge' | 'maxAltitude' | 'locations' | 'prerequisites' | 'instructor' | 'seoTitle' | 'seoDescription' | 'websiteCategory' | 'imageAlt' | 'groupSize' | 'sessionFormat' | 'swimmingRequirement' | 'healthRequirement' | 'safetyEquipment' | 'safetySupervision' | 'safetyWeather'
@@ -191,7 +194,7 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
     <ListEditor id={id(key)} values={values[key]} onChange={(v) => set(key, v)} itemLabel={itemLabel} addLabel={addLabel} max={12} describedBy={describedBy(key)} invalid={!!errors[key]} />
 
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent className="max-w-2xl gap-0 overflow-hidden bg-white p-0">
+    <DialogContent className="max-w-2xl gap-0 overflow-hidden bg-white p-0 lg:max-w-5xl">
       <form ref={formRef} onSubmit={submit} noValidate className="flex max-h-[calc(100dvh-2rem)] flex-col">
         <div className="shrink-0 border-b border-slate-100 py-5 pr-14 pl-6">
           <DialogTitle className="text-lg font-semibold text-ink">{item ? `Edit ${item.name}` : `Add ${noun}`}</DialogTitle>
@@ -200,69 +203,81 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
 
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 py-5">
           <FormSection title={isActivity ? 'Activity details' : 'Basics'}>
-            <Field id={id('name')} label={isActivity ? 'Activity name' : 'Course title'} required error={errors.name}>{text('name', { placeholder: isActivity ? 'e.g. Sunset Kayak Tour' : 'e.g. Level 1 Paddle Course' })}</Field>
-            <Field id={id('slug')} label="URL slug" required error={errors.slug} hint={`Used in the public link. ${slugTouched ? '' : 'Filled from the name until you edit it.'}`}>
-              <Input id={id('slug')} value={values.slug} onChange={(e) => { setSlugTouched(true); set('slug', e.target.value.toLowerCase()) }} aria-invalid={!!errors.slug} aria-describedby={describedBy('slug', true)} autoComplete="off" className="h-10 rounded-xl font-mono text-sm" />
-            </Field>
-            <Field id={`${kind}-image`} label={`${isActivity ? 'Activity' : 'Course'} image`} error={fileErrors.image}>
-              <ActivityImageField id={`${kind}-image`} currentUrl={(isActivity ? activity?.imageUrl : course?.imageUrl) ?? null} change={image} onChange={setImage} error={fileErrors.image}
-                onError={(message) => setFileErrors((c) => ({ ...c, image: message }))} disabled={submitting} onBusyChange={setImageBusy} />
-            </Field>
-            <Field id={id('shortDescription')} label="Short description" required error={errors.shortDescription} hint={`Shown on listing cards. ${count('shortDescription', 160)}`}>{area('shortDescription', 2, 'One or two sentences for listings', true)}</Field>
-            <Field id={id('description')} label={isActivity ? 'About the experience' : 'Full course description'} error={errors.description}>{area('description', 5, isActivity ? 'What guests will do, see and feel' : undefined)}</Field>
-            {isActivity && <Field id={id('highlights')} label="Highlights" error={errors.highlights} hint="Short points, up to 12.">
-              <ListEditor id={id('highlights')} values={values.highlights} onChange={(v) => set('highlights', v)} itemLabel="Highlight" addLabel="Add highlight" max={12}
-                placeholder="e.g. Sunrise view from the ridge" describedBy={describedBy('highlights', true)} invalid={!!errors.highlights} />
-            </Field>}
-            {!isActivity && <div className="grid gap-3 sm:grid-cols-2">
-              <Field id={id('category')} label="Course category" required error={errors.category}>
-                <FormSelect id={id('category')} items={optionsOf<string>(courseCategories)} value={values.category} onChange={(v) => set('category', v)} placeholder="Choose a category" invalid={!!errors.category} describedBy={describedBy('category')} />
+            <div className={row2}>
+              <Field id={id('name')} label={isActivity ? 'Activity name' : 'Course title'} required error={errors.name}>{text('name', { placeholder: isActivity ? 'e.g. Sunset Kayak Tour' : 'e.g. Level 1 Paddle Course' })}</Field>
+              <Field id={id('slug')} label="URL slug" required error={errors.slug} hint={`Used in the public link. ${slugTouched ? '' : 'Filled from the name until you edit it.'}`}>
+                <Input id={id('slug')} value={values.slug} onChange={(e) => { setSlugTouched(true); set('slug', e.target.value.toLowerCase()) }} aria-invalid={!!errors.slug} aria-describedby={describedBy('slug', true)} autoComplete="off" className="h-10 rounded-xl font-mono text-sm" />
               </Field>
-              <Field id={id('level')} label="Course level" required error={errors.level}>
-                <FormSelect id={id('level')} items={optionsOf(courseLevels)} value={values.level as CourseLevel | ''} onChange={(v) => set('level', v)} placeholder="Choose a level" invalid={!!errors.level} describedBy={describedBy('level')} />
+            </div>
+            <div className={row2}>
+              <Field id={`${kind}-image`} label={`${isActivity ? 'Activity' : 'Course'} image`} error={fileErrors.image}>
+                <ActivityImageField id={`${kind}-image`} currentUrl={(isActivity ? activity?.imageUrl : course?.imageUrl) ?? null} change={image} onChange={setImage} error={fileErrors.image}
+                  onError={(message) => setFileErrors((c) => ({ ...c, image: message }))} disabled={submitting} onBusyChange={setImageBusy} />
               </Field>
-            </div>}
+              <Field id={id('shortDescription')} label="Short description" required error={errors.shortDescription} hint={`Shown on listing cards. ${count('shortDescription', 160)}`}>{area('shortDescription', 2, 'One or two sentences for listings', true)}</Field>
+            </div>
+            <div className={row2}>
+              <Field id={id('description')} label={isActivity ? 'About the experience' : 'Full course description'} error={errors.description}>{area('description', 5, isActivity ? 'What guests will do, see and feel' : undefined)}</Field>
+              {isActivity && <Field id={id('highlights')} label="Highlights" error={errors.highlights} hint="Short points, up to 12.">
+                <ListEditor id={id('highlights')} values={values.highlights} onChange={(v) => set('highlights', v)} itemLabel="Highlight" addLabel="Add highlight" max={12}
+                  placeholder="e.g. Sunrise view from the ridge" describedBy={describedBy('highlights', true)} invalid={!!errors.highlights} />
+              </Field>}
+              {!isActivity && <div className="grid gap-3 sm:grid-cols-2">
+                <Field id={id('category')} label="Course category" required error={errors.category}>
+                  <FormSelect id={id('category')} items={optionsOf<string>(courseCategories)} value={values.category} onChange={(v) => set('category', v)} placeholder="Choose a category" invalid={!!errors.category} describedBy={describedBy('category')} />
+                </Field>
+                <Field id={id('level')} label="Course level" required error={errors.level}>
+                  <FormSelect id={id('level')} items={optionsOf(courseLevels)} value={values.level as CourseLevel | ''} onChange={(v) => set('level', v)} placeholder="Choose a level" invalid={!!errors.level} describedBy={describedBy('level')} />
+                </Field>
+              </div>}
+            </div>
           </FormSection>
 
           {isActivity && <FormSection title="Category">
-            <Field id={id('category')} label="Master category" required error={errors.category}>
-              <FormSelect id={id('category')} items={optionsOf<string>(activityCategories)} value={values.category} onChange={setCategory} placeholder="Choose a master category" invalid={!!errors.category} describedBy={describedBy('category')} />
-            </Field>
-            <Field id={id('tags')} label="Category tags" error={errors.tags} hint="Up to 10. Website visitors can filter by these.">
-              <ChipSelect id={id('tags')} label="Category tags" options={tagOptions} selected={values.tags} onChange={(v) => set('tags', v)} max={10}
-                describedBy={describedBy('tags', true)} invalid={!!errors.tags} emptyText="Choose a master category first." />
-            </Field>
+            <div className={row2}>
+              <Field id={id('category')} label="Master category" required error={errors.category}>
+                <FormSelect id={id('category')} items={optionsOf<string>(activityCategories)} value={values.category} onChange={setCategory} placeholder="Choose a master category" invalid={!!errors.category} describedBy={describedBy('category')} />
+              </Field>
+              <Field id={id('tags')} label="Category tags" error={errors.tags} hint="Up to 10. Website visitors can filter by these.">
+                <ChipSelect id={id('tags')} label="Category tags" options={tagOptions} selected={values.tags} onChange={(v) => set('tags', v)} max={10}
+                  describedBy={describedBy('tags', true)} invalid={!!errors.tags} emptyText="Choose a master category first." />
+              </Field>
+            </div>
           </FormSection>}
 
           <FormSection title={isActivity ? 'Duration & slots' : 'Duration'}>
-            <div className="grid grid-cols-[1fr_140px] gap-3">
-              <Field id={id('durationValue')} label="Duration" required error={errors.durationValue}>{text('durationValue', { inputMode: 'decimal', placeholder: isActivity ? 'e.g. 2' : 'e.g. 3' })}</Field>
-              <Field id={id('durationUnit')} label="Unit" required error={errors.durationUnit}>
-                <FormSelect id={id('durationUnit')} items={optionsOf(durationUnits)} value={values.durationUnit} onChange={(v) => set('durationUnit', v)} />
-              </Field>
+            <div className={row3}>
+              <div className="grid grid-cols-[1fr_140px] gap-3">
+                <Field id={id('durationValue')} label="Duration" required error={errors.durationValue}>{text('durationValue', { inputMode: 'decimal', placeholder: isActivity ? 'e.g. 2' : 'e.g. 3' })}</Field>
+                <Field id={id('durationUnit')} label="Unit" required error={errors.durationUnit}>
+                  <FormSelect id={id('durationUnit')} items={optionsOf(durationUnits)} value={values.durationUnit} onChange={(v) => set('durationUnit', v)} />
+                </Field>
+              </div>
+              {isActivity && <>
+                <Field id={id('timeSlots')} label="Time slots" error={errors.timeSlots} hint="Daily start times. Leave empty for flexible timing.">
+                  <ListEditor id={id('timeSlots')} type="time" values={values.timeSlots} onChange={(v) => set('timeSlots', v)} itemLabel="Time slot" addLabel="Add time slot" max={12}
+                    describedBy={describedBy('timeSlots', true)} invalid={!!errors.timeSlots} />
+                </Field>
+                <Field id={id('totalSlots')} label="Total slots" error={errors.totalSlots} hint="Seats per time slot. Leave empty if there is no fixed limit.">{text('totalSlots', { inputMode: 'numeric', placeholder: 'e.g. 12', hint: true })}</Field>
+              </>}
             </div>
-            {isActivity && <>
-              <Field id={id('timeSlots')} label="Time slots" error={errors.timeSlots} hint="Daily start times. Leave empty for flexible timing.">
-                <ListEditor id={id('timeSlots')} type="time" values={values.timeSlots} onChange={(v) => set('timeSlots', v)} itemLabel="Time slot" addLabel="Add time slot" max={12}
-                  describedBy={describedBy('timeSlots', true)} invalid={!!errors.timeSlots} />
-              </Field>
-              <Field id={id('totalSlots')} label="Total slots" error={errors.totalSlots} hint="Seats per time slot. Leave empty if there is no fixed limit.">{text('totalSlots', { inputMode: 'numeric', placeholder: 'e.g. 12', hint: true })}</Field>
-            </>}
           </FormSection>
 
           {isActivity && <FormSection title="Requirements & season">
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Field id={id('minAge')} label="Min age" error={errors.minAge} hint="Years">{text('minAge', { inputMode: 'numeric', placeholder: 'e.g. 12', hint: true })}</Field>
-              <Field id={id('maxAltitude')} label="Max altitude" error={errors.maxAltitude} hint="Metres">{text('maxAltitude', { inputMode: 'numeric', placeholder: 'e.g. 1868', hint: true })}</Field>
-              <Field id={id('difficulty')} label="Difficulty level" error={errors.difficulty}>
-                <FormSelect id={id('difficulty')} items={optionsOf(difficultyLevels)} value={values.difficulty as DifficultyLevel | ''} onChange={(v) => set('difficulty', v)} placeholder="Not set" invalid={!!errors.difficulty} describedBy={describedBy('difficulty')} />
-                {values.difficulty && <button type="button" onClick={() => set('difficulty', '')} className="w-fit text-[11px] text-slate-500 hover:text-forest hover:underline">Clear</button>}
+            <div className={row2}>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Field id={id('minAge')} label="Min age" error={errors.minAge} hint="Years">{text('minAge', { inputMode: 'numeric', placeholder: 'e.g. 12', hint: true })}</Field>
+                <Field id={id('maxAltitude')} label="Max altitude" error={errors.maxAltitude} hint="Metres">{text('maxAltitude', { inputMode: 'numeric', placeholder: 'e.g. 1868', hint: true })}</Field>
+                <Field id={id('difficulty')} label="Difficulty level" error={errors.difficulty}>
+                  <FormSelect id={id('difficulty')} items={optionsOf(difficultyLevels)} value={values.difficulty as DifficultyLevel | ''} onChange={(v) => set('difficulty', v)} placeholder="Not set" invalid={!!errors.difficulty} describedBy={describedBy('difficulty')} />
+                  {values.difficulty && <button type="button" onClick={() => set('difficulty', '')} className="w-fit text-[11px] text-slate-500 hover:text-forest hover:underline">Clear</button>}
+                </Field>
+              </div>
+              <Field id={id('bestSeasonMonths')} label="Best season" error={errors.bestSeasonMonths} hint="Select the best months to go.">
+                <ChipSelect id={id('bestSeasonMonths')} label="Best season months" options={monthOptions} selected={values.bestSeasonMonths} onChange={(v) => set('bestSeasonMonths', v)}
+                  describedBy={describedBy('bestSeasonMonths', true)} invalid={!!errors.bestSeasonMonths} />
               </Field>
             </div>
-            <Field id={id('bestSeasonMonths')} label="Best season" error={errors.bestSeasonMonths} hint="Select the best months to go.">
-              <ChipSelect id={id('bestSeasonMonths')} label="Best season months" options={monthOptions} selected={values.bestSeasonMonths} onChange={(v) => set('bestSeasonMonths', v)}
-                describedBy={describedBy('bestSeasonMonths', true)} invalid={!!errors.bestSeasonMonths} />
-            </Field>
           </FormSection>}
 
           {isActivity && <FormSection title="Custom itinerary">
@@ -274,7 +289,7 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
 
           {isActivity && <FormSection title="Website details (optional)">
             <p className="-mt-2 text-[11px] text-slate-400">Only needed if this company’s website shows them. Leave empty otherwise.</p>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Field id={id('websiteCategory')} label="Website category" error={errors.websiteCategory} hint="Label and filter on the website.">{text('websiteCategory', { placeholder: 'e.g. Guided experience', hint: true })}</Field>
               <Field id={id('skillLevel')} label="Skill level" error={errors.skillLevel}>
                 <FormSelect id={id('skillLevel')} items={optionsOf(courseLevels)} value={values.skillLevel as CourseLevel | ''} onChange={(v) => set('skillLevel', v)} placeholder="Not set" invalid={!!errors.skillLevel} describedBy={describedBy('skillLevel')} />
@@ -283,51 +298,67 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
               <Field id={id('groupSize')} label="Group size" error={errors.groupSize}>{text('groupSize', { placeholder: 'e.g. 2–8 guests' })}</Field>
               <Field id={id('sessionFormat')} label="Session format" error={errors.sessionFormat}>{text('sessionFormat', { placeholder: 'e.g. Guided group session' })}</Field>
             </div>
-            <Field id={id('imageAlt')} label="Image description" error={errors.imageAlt} hint="Describes the activity image for screen readers.">{text('imageAlt', { placeholder: 'e.g. Paddler in an orange kayak beside the reeds', hint: true })}</Field>
-            <label className="flex w-fit items-center gap-2 text-xs font-medium text-slate-700">
-              <input id={id('featured')} type="checkbox" checked={values.featured} onChange={(e) => set('featured', e.target.checked)} className="size-4 accent-forest" />Feature on the website
-            </label>
-            <Field id={id('swimmingRequirement')} label="Swimming ability" error={errors.swimmingRequirement}>{area('swimmingRequirement', 2)}</Field>
-            <Field id={id('healthRequirement')} label="Physical & health requirements" error={errors.healthRequirement}>{area('healthRequirement', 2)}</Field>
-            <Field id={id('learningOutcomes')} label="Learning outcomes" error={errors.learningOutcomes}>{list('learningOutcomes', 'Learning outcome', 'Add outcome')}</Field>
-            <Field id={id('inclusions')} label="What’s included" error={errors.inclusions}>{list('inclusions', 'Inclusion', 'Add inclusion')}</Field>
-            <Field id={id('whatToBring')} label="What to bring" error={errors.whatToBring}>{list('whatToBring', 'Item to bring', 'Add item')}</Field>
-            <Field id={id('safetyEquipment')} label="Equipment & buoyancy aids" error={errors.safetyEquipment}>{area('safetyEquipment', 2)}</Field>
-            <Field id={id('safetySupervision')} label="Guides & supervision" error={errors.safetySupervision}>{area('safetySupervision', 2)}</Field>
-            <Field id={id('safetyWeather')} label="Weather & session closures" error={errors.safetyWeather}>{area('safetyWeather', 2)}</Field>
+            <div className="grid grid-cols-1 items-center gap-4 lg:grid-cols-2">
+              <Field id={id('imageAlt')} label="Image description" error={errors.imageAlt} hint="Describes the activity image for screen readers.">{text('imageAlt', { placeholder: 'e.g. Paddler in an orange kayak beside the reeds', hint: true })}</Field>
+              <label className="flex w-fit items-center gap-2 text-xs font-medium text-slate-700">
+                <input id={id('featured')} type="checkbox" checked={values.featured} onChange={(e) => set('featured', e.target.checked)} className="size-4 accent-forest" />Feature on the website
+              </label>
+            </div>
+            <div className={row2}>
+              <Field id={id('swimmingRequirement')} label="Swimming ability" error={errors.swimmingRequirement}>{area('swimmingRequirement', 2)}</Field>
+              <Field id={id('healthRequirement')} label="Physical & health requirements" error={errors.healthRequirement}>{area('healthRequirement', 2)}</Field>
+            </div>
+            <div className={row3}>
+              <Field id={id('learningOutcomes')} label="Learning outcomes" error={errors.learningOutcomes}>{list('learningOutcomes', 'Learning outcome', 'Add outcome')}</Field>
+              <Field id={id('inclusions')} label="What’s included" error={errors.inclusions}>{list('inclusions', 'Inclusion', 'Add inclusion')}</Field>
+              <Field id={id('whatToBring')} label="What to bring" error={errors.whatToBring}>{list('whatToBring', 'Item to bring', 'Add item')}</Field>
+            </div>
+            <div className={row3}>
+              <Field id={id('safetyEquipment')} label="Equipment & buoyancy aids" error={errors.safetyEquipment}>{area('safetyEquipment', 2)}</Field>
+              <Field id={id('safetySupervision')} label="Guides & supervision" error={errors.safetySupervision}>{area('safetySupervision', 2)}</Field>
+              <Field id={id('safetyWeather')} label="Weather & session closures" error={errors.safetyWeather}>{area('safetyWeather', 2)}</Field>
+            </div>
             <Field id={id('faqs')} label="FAQs" error={errors.faqs}>
               <FaqEditor id={id('faqs')} values={values.faqs} onChange={(v) => set('faqs', v)} max={12} describedBy={describedBy('faqs')} invalid={!!errors.faqs} />
             </Field>
-            <Field id={id('relatedSlugs')} label="Related activities" error={errors.relatedSlugs} hint="Up to 6 of this company’s other activities.">
-              <ChipSelect id={id('relatedSlugs')} label="Related activities" options={relatedOptions} selected={values.relatedSlugs} onChange={(v) => set('relatedSlugs', v)} max={6}
-                describedBy={describedBy('relatedSlugs', true)} invalid={!!errors.relatedSlugs} emptyText="This company has no other activities yet." />
-            </Field>
-            <Field id={id('nextSteps')} label="Next steps" error={errors.nextSteps} hint="Links shown at the end of the activity page.">
-              <ChipSelect id={id('nextSteps')} label="Next steps" options={nextStepOptions} selected={values.nextSteps} onChange={(v) => set('nextSteps', v)}
-                describedBy={describedBy('nextSteps', true)} invalid={!!errors.nextSteps} />
-            </Field>
+            <div className={row2}>
+              <Field id={id('relatedSlugs')} label="Related activities" error={errors.relatedSlugs} hint="Up to 6 of this company’s other activities.">
+                <ChipSelect id={id('relatedSlugs')} label="Related activities" options={relatedOptions} selected={values.relatedSlugs} onChange={(v) => set('relatedSlugs', v)} max={6}
+                  describedBy={describedBy('relatedSlugs', true)} invalid={!!errors.relatedSlugs} emptyText="This company has no other activities yet." />
+              </Field>
+              <Field id={id('nextSteps')} label="Next steps" error={errors.nextSteps} hint="Links shown at the end of the activity page.">
+                <ChipSelect id={id('nextSteps')} label="Next steps" options={nextStepOptions} selected={values.nextSteps} onChange={(v) => set('nextSteps', v)}
+                  describedBy={describedBy('nextSteps', true)} invalid={!!errors.nextSteps} />
+              </Field>
+            </div>
           </FormSection>}
 
           <FormSection title={isActivity ? 'Price & location' : 'Pricing'}>
-            <div className="grid grid-cols-[1fr_120px] gap-3">
-              <Field id={id('price')} label="Price" required error={errors.price} hint="Per guest. Use 0 for free.">{text('price', { inputMode: 'decimal', placeholder: '0', hint: true })}</Field>
-              <Field id={id('currency')} label="Currency" required error={errors.currency}>
-                <FormSelect id={id('currency')} items={optionsOf(currencies)} value={values.currency} onChange={(v) => set('currency', v)} />
-              </Field>
+            <div className={row2}>
+              <div className="grid grid-cols-[1fr_120px] gap-3">
+                <Field id={id('price')} label="Price" required error={errors.price} hint="Per guest. Use 0 for free.">{text('price', { inputMode: 'decimal', placeholder: '0', hint: true })}</Field>
+                <Field id={id('currency')} label="Currency" required error={errors.currency}>
+                  <FormSelect id={id('currency')} items={optionsOf(currencies)} value={values.currency} onChange={(v) => set('currency', v)} />
+                </Field>
+              </div>
+              {isActivity && <Field id={id('locations')} label="Available locations" error={errors.locations} hint="Separate with commas.">{text('locations', { placeholder: 'e.g. Kovalam, Varkala', hint: true })}</Field>}
             </div>
-            {isActivity && <Field id={id('locations')} label="Available locations" error={errors.locations} hint="Separate with commas.">{text('locations', { placeholder: 'e.g. Kovalam, Varkala', hint: true })}</Field>}
             {isActivity && <Field id={id('offerings')} label="Location details" error={errors.offerings} hint="For websites that list each location separately. Empty price or duration uses the activity’s own.">
               <OfferingEditor id={id('offerings')} values={values.offerings} onChange={(v) => set('offerings', v)} max={20} currency={values.currency} describedBy={describedBy('offerings', true)} invalid={!!errors.offerings} />
             </Field>}
           </FormSection>
 
           {!isActivity && <FormSection title="Curriculum (optional)">
-            <Field id={id('modules')} label="Modules" error={errors.modules} hint="Only if the course is taught in modules. Empty rows are ignored.">
-              <ListEditor id={id('modules')} values={values.modules} onChange={(v) => set('modules', v)} itemLabel="Module" addLabel="Add module" max={30} numbered
-                describedBy={describedBy('modules', true)} invalid={!!errors.modules} />
-            </Field>
-            <Field id={id('prerequisites')} label="Prerequisites" error={errors.prerequisites}>{area('prerequisites', 2, 'e.g. Able to swim 50 m')}</Field>
-            <Field id={id('instructor')} label="Instructor" error={errors.instructor}>{text('instructor')}</Field>
+            <div className={row2}>
+              <Field id={id('modules')} label="Modules" error={errors.modules} hint="Only if the course is taught in modules. Empty rows are ignored.">
+                <ListEditor id={id('modules')} values={values.modules} onChange={(v) => set('modules', v)} itemLabel="Module" addLabel="Add module" max={30} numbered
+                  describedBy={describedBy('modules', true)} invalid={!!errors.modules} />
+              </Field>
+              <div className="flex flex-col gap-4">
+                <Field id={id('prerequisites')} label="Prerequisites" error={errors.prerequisites}>{area('prerequisites', 2, 'e.g. Able to swim 50 m')}</Field>
+                <Field id={id('instructor')} label="Instructor" error={errors.instructor}>{text('instructor')}</Field>
+              </div>
+            </div>
           </FormSection>}
 
           <FormSection title="Gallery (optional)">
@@ -338,7 +369,7 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
           </FormSection>
 
           <FormSection title="Availability & publishing">
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 lg:gap-4">
               <Field id={id('availability')} label="Availability" required error={errors.availability}>
                 <FormSelect id={id('availability')} items={optionsOf(availabilityStatuses)} value={values.availability} onChange={(v) => set('availability', v)} />
               </Field>
@@ -349,8 +380,10 @@ function CatalogForm({ kind, open, onOpenChange, company, item, onSaved }: Catal
           </FormSection>
 
           <FormSection title="SEO (optional)">
-            <Field id={id('seoTitle')} label="SEO title" error={errors.seoTitle} hint={count('seoTitle', 60)}>{text('seoTitle', { hint: true })}</Field>
-            <Field id={id('seoDescription')} label="SEO description" error={errors.seoDescription} hint={count('seoDescription', 160)}>{area('seoDescription', 2, undefined, true)}</Field>
+            <div className={row2}>
+              <Field id={id('seoTitle')} label="SEO title" error={errors.seoTitle} hint={count('seoTitle', 60)}>{text('seoTitle', { hint: true })}</Field>
+              <Field id={id('seoDescription')} label="SEO description" error={errors.seoDescription} hint={count('seoDescription', 160)}>{area('seoDescription', 2, undefined, true)}</Field>
+            </div>
           </FormSection>
 
           {(formError || Object.values(errors).some(Boolean)) && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{formError ?? 'Please fix the highlighted fields.'}</p>}
