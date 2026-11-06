@@ -33,6 +33,6 @@ export function StatusBadge({ status }: { status: Status }) {
 export const bookingStatusColors: Record<BookingStatus, string> = {
   Confirmed: '#1fb2a6',
   Pending: '#d4a42e',
-  Completed: '#3e5b56',
+  Completed: '#0a4a52',
   Cancelled: '#cfd9d6',
 }

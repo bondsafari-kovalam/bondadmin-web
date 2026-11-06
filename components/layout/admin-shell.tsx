@@ -1,29 +1,45 @@
 'use client'
 
-import { useMemo, type ReactNode } from 'react'
-import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, type ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { AuthGuard } from '@/components/auth/auth-guard'
 import { Sidebar } from '@/components/layout/sidebar'
 import { type Crumb, TopBar } from '@/components/layout/top-bar'
-import { useCompanies, CompaniesProvider } from '@/components/providers/companies-provider'
-import { CatalogProvider } from '@/components/providers/catalog-provider'
 import { companyTabs } from '@/components/companies/company-tabs'
 import { DemoProvider, useDemo } from '@/components/providers/demo-provider'
+import { useCompanies } from '@/hooks/use-companies'
 import { getDashboardData } from '@/lib/dashboard'
 import { demoDataset } from '@/lib/mock/dashboard-data'
 import { visibleCompanies } from '@/lib/permissions'
+import { useAppDispatch, useAppSelector } from '@/store/hooks'
+import { selectCurrentUser } from '@/store/selectors'
+import { logout } from '@/store/slices/auth-slice'
+import { fetchCompanies } from '@/store/slices/companies-slice'
 
 const sectionNames: Record<string, string> = { companies: 'Companies' }
 const tabNames: Record<string, string> = Object.fromEntries(companyTabs.filter((t) => t.segment).map((t) => [t.segment, t.label]))
 
-/** Shared chrome for every admin page: demo role, company store, sidebar and header. */
+/** Shared chrome for every admin page: sign-in check, demo role, sidebar and header. */
 export function AdminShell({ children }: { children: ReactNode }) {
-  return <DemoProvider><CompaniesProvider><CatalogProvider><ShellFrame>{children}</ShellFrame></CatalogProvider></CompaniesProvider></DemoProvider>
+  return <AuthGuard><DemoProvider><ShellFrame>{children}</ShellFrame></DemoProvider></AuthGuard>
 }
 
 function ShellFrame({ children }: { children: ReactNode }) {
   const { role, setRole, user, demoState, setDemoState } = useDemo()
-  const { companies } = useCompanies()
+  const { companies, status } = useCompanies()
+  const account = useAppSelector(selectCurrentUser)
+  const dispatch = useAppDispatch()
+  const router = useRouter()
   const pathname = usePathname()
+
+  useEffect(() => {
+    if (status === 'idle') void dispatch(fetchCompanies())
+  }, [status, dispatch])
+
+  const signOut = async () => {
+    await dispatch(logout())
+    router.replace('/login')
+  }
   const allowed = visibleCompanies(user, companies)
   const scopeLabel = role === 'owner' ? `Viewing all ${allowed.length} companies` : allowed.length === 1 ? `Viewing ${allowed[0].name}` : `Viewing your ${allowed.length} companies`
 
@@ -42,10 +58,11 @@ function ShellFrame({ children }: { children: ReactNode }) {
     if (tab) crumbs.push({ label: tabNames[tab] ?? tab })
   }
 
-  return <div className="flex min-h-screen bg-mint text-ink [color-scheme:light]">
+  return <div className="app-canvas flex min-h-screen text-ink [color-scheme:light]">
     <Sidebar user={user} scopeLabel={scopeLabel} />
     <div className="min-w-0 flex-1">
-      <TopBar user={user} role={role} onRoleChange={setRole} demoState={demoState} onDemoStateChange={setDemoState} alerts={alerts} scopeLabel={scopeLabel} crumbs={crumbs} />
+      <TopBar user={user} role={role} onRoleChange={setRole} demoState={demoState} onDemoStateChange={setDemoState} alerts={alerts} scopeLabel={scopeLabel} crumbs={crumbs}
+        accountEmail={account?.email} onSignOut={signOut} />
       {children}
     </div>
   </div>

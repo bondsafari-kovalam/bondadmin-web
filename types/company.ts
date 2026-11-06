@@ -20,6 +20,8 @@ export interface Company {
   category: BusinessType
   status: CompanyStatus
   color: string
+  /** Absolute URL of the uploaded logo image; the avatar falls back to `code` on `color`. */
+  logoUrl?: string
   description?: string
   contact: CompanyContact
   createdAt: Date

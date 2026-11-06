@@ -3,7 +3,7 @@
 import { CatalogSummaryCard } from '@/components/catalog/catalog-summary-card'
 import { CompanyProfileCard } from '@/components/companies/company-detail-cards'
 import { useCompanyPage } from '@/components/companies/company-page-context'
-import { useCompanies } from '@/components/providers/companies-provider'
+import { useCompanies } from '@/hooks/use-companies'
 import { useDemo } from '@/components/providers/demo-provider'
 import { ActivityFeed } from '@/components/shared/activity-feed'
 import { KpiGrid } from '@/components/shared/kpi-grid'

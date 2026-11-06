@@ -3,15 +3,18 @@
 import { useState } from 'react'
 import { Lock, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { useCatalog } from '@/components/providers/catalog-provider'
-import { useDemo } from '@/components/providers/demo-provider'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
 import { EmptyState } from '@/components/shared/empty-state'
 import { NoticeBanner } from '@/components/shared/feedback'
 import { FilterSelect, SearchInput } from '@/components/shared/form-controls'
 import { SectionCard } from '@/components/shared/section-card'
-import { useDemoResult, type DemoResult } from '@/hooks/use-demo-result'
+import { useCatalog } from '@/hooks/use-catalog'
+import { useCompanyPermissions } from '@/hooks/use-company-permissions'
+import type { DemoResult } from '@/hooks/use-demo-result'
 import { filterCatalog, itemsFor, type AvailabilityFilter, type PublicationFilter } from '@/lib/catalog'
+import { publicationToDto } from '@/services/catalog.service'
+import { useAppDispatch } from '@/store/hooks'
+import { deleteCatalogItem, updateCatalogItem } from '@/store/slices/catalog-slice'
 import type { CatalogItem, CatalogKind } from '@/types/catalog'
 import type { Company } from '@/types/company'
 import { ActivityForm, CourseForm } from './catalog-form'
@@ -23,8 +26,9 @@ const availabilityItems: Record<AvailabilityFilter, string> = { all: 'Any availa
 
 /** Activities or courses of one company: search, filters, table, add / edit / delete / publish / preview. */
 export function CatalogManager({ kind, company }: { kind: CatalogKind, company: Company }) {
-  const { items, remove, publish } = useCatalog()
-  const { permissions, demoState } = useDemo()
+  const { items, loading, error, reload } = useCatalog(company.id)
+  const { canManageCatalog } = useCompanyPermissions()
+  const dispatch = useAppDispatch()
   const [query, setQuery] = useState('')
   const [publication, setPublication] = useState<PublicationFilter>('all')
   const [availability, setAvailability] = useState<AvailabilityFilter>('all')
@@ -32,17 +36,17 @@ export function CatalogManager({ kind, company }: { kind: CatalogKind, company: 
   const [editing, setEditing] = useState<CatalogItem | null>(null)
   const [previewing, setPreviewing] = useState<CatalogItem | null>(null)
   const [deleting, setDeleting] = useState<CatalogItem | null>(null)
-  const [notice, setNotice] = useState<string | null>(null)
+  const [notice, setNotice] = useState<{ message: string, tone: 'success' | 'error' } | null>(null)
+  const success = (message: string) => setNotice({ message, tone: 'success' })
+  const failure = (message: string) => setNotice({ message, tone: 'error' })
 
   const noun = kind === 'activity' ? 'activity' : 'course'
   const plural = kind === 'activity' ? 'activities' : 'courses'
   const Noun = noun[0].toUpperCase() + noun.slice(1)
-  const canManage = permissions.manageCatalog
+  const canManage = canManageCatalog(company.id)
 
-  // The demo state switcher gates loading / error / empty; records come live from the store so edits show instantly.
-  const gate = useDemoResult((empty) => empty, [company.id, kind], demoState)
-  const all = gate.status === 'ready' && !gate.data ? itemsFor(items, company.id, kind) : []
-  const result: DemoResult<CatalogItem[]> = gate.status === 'ready' ? { status: 'ready', data: all } : gate
+  const all = loading || error ? [] : itemsFor(items, company.id, kind)
+  const result: DemoResult<CatalogItem[]> = loading ? { status: 'loading' } : error ? { status: 'error', retry: reload } : { status: 'ready', data: all }
   const visible = filterCatalog(all, query, publication, availability)
   const filtered = query.trim() !== '' || publication !== 'all' || availability !== 'all'
 
@@ -51,18 +55,25 @@ export function CatalogManager({ kind, company }: { kind: CatalogKind, company: 
     onPreview: setPreviewing,
     ...(canManage ? {
       onEdit: (item) => openForm(item),
-      onTogglePublish: (item) => {
+      onTogglePublish: async (item) => {
         const next = item.publication === 'Published' ? 'Draft' : 'Published'
-        publish(company.id, item.id, next)
-        setNotice(`${item.name} ${next === 'Published' ? 'published' : 'moved to draft'}.`)
+        const action = await dispatch(updateCatalogItem({ companyId: company.id, kind: item.kind, id: item.id, payload: { publication: publicationToDto(next) } }))
+        if (updateCatalogItem.fulfilled.match(action)) success(`${item.name} ${next === 'Published' ? 'published — it now appears on the website' : 'moved to draft and hidden from the website'}.`)
+        else failure(`Couldn’t update ${item.name}: ${action.payload?.message ?? 'please try again.'}`)
       },
       onDelete: setDeleting,
     } : {}),
   }
+  const remove = async (item: CatalogItem) => {
+    const action = await dispatch(deleteCatalogItem({ companyId: company.id, kind: item.kind, id: item.id }))
+    if (deleteCatalogItem.fulfilled.match(action)) success(`${item.name} deleted.`)
+    else failure(`Couldn’t delete ${item.name}: ${action.payload?.message ?? 'please try again.'}`)
+  }
+
   const addButton = canManage && <Button onClick={() => openForm(null)} className="h-10 rounded-full bg-forest px-5 text-xs hover:bg-forest-light"><Plus data-icon="inline-start" />Add {Noun}</Button>
 
   return <>
-    {notice && <NoticeBanner message={`${notice} Demo only — kept for this session.`} onDismiss={() => setNotice(null)} />}
+    {notice && <NoticeBanner message={notice.message} tone={notice.tone} onDismiss={() => setNotice(null)} />}
 
     <SectionCard title={kind === 'activity' ? 'Activities' : 'Courses'} description={result.status === 'ready' ? `Showing ${visible.length} of ${all.length} · ${company.name} only` : `${company.name} only`}
       result={result} minHeight={300} contentClassName="px-3 md:px-0" action={addButton}
@@ -84,14 +95,14 @@ export function CatalogManager({ kind, company }: { kind: CatalogKind, company: 
     </SectionCard>
 
     {canManage && (kind === 'activity'
-      ? <ActivityForm open={formOpen} onOpenChange={setFormOpen} company={company} item={editing} onSaved={(_, mode, name) => setNotice(`${name} ${mode}.`)} />
-      : <CourseForm open={formOpen} onOpenChange={setFormOpen} company={company} item={editing} onSaved={(_, mode, name) => setNotice(`${name} ${mode}.`)} />)}
+      ? <ActivityForm open={formOpen} onOpenChange={setFormOpen} company={company} item={editing} onSaved={(_, mode, name) => success(`${name} ${mode}.`)} />
+      : <CourseForm open={formOpen} onOpenChange={setFormOpen} company={company} item={editing} onSaved={(_, mode, name) => success(`${name} ${mode}.`)} />)}
 
     <CatalogPreviewDialog item={previewing} company={company} onOpenChange={(open) => !open && setPreviewing(null)} />
 
     <ConfirmDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)} destructive
       title={`Delete this ${noun}?`} confirmLabel={`Delete ${noun}`}
-      description={<>“{deleting?.name}” will be removed from {company.name}. Other companies are not affected. In this demo it comes back when the page is reloaded.</>}
-      onConfirm={() => { if (deleting) { remove(company.id, deleting.id); setNotice(`${deleting.name} deleted.`) } }} />
+      description={<>“{deleting?.name}” will be permanently removed from {company.name} and from the website. Other companies are not affected.</>}
+      onConfirm={() => { if (deleting) void remove(deleting) }} />
   </>
 }

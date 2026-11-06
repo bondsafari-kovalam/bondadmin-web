@@ -9,13 +9,13 @@ export const navGroups: NavGroup[] = [
   { label: 'Main', items: [
     { label: 'Overview', icon: LayoutDashboard, href: '/' },
     { label: 'Companies', icon: BriefcaseBusiness, href: '/companies' },
+    { label: 'Social Inbox', icon: MessageSquareText, href: '/inbox' },
   ] },
   { label: 'Coming soon', items: [
     { label: 'Activities & Courses', icon: BookOpen, roles: ['owner', 'companyAdmin'] },
     { label: 'Bookings', icon: CalendarDays },
     { label: 'Customers & CRM', icon: Users },
     { label: 'Sales Team', icon: TrendingUp, roles: ['owner', 'companyAdmin'] },
-    { label: 'Social Inbox', icon: MessageSquareText },
     { label: 'Payments & Discounts', icon: CreditCard, roles: ['owner', 'companyAdmin'] },
     { label: 'Reports & Analytics', icon: BarChart3, roles: ['owner', 'companyAdmin'] },
   ] },

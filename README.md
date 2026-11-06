@@ -16,9 +16,11 @@ app/                         Routes only. Each page.tsx composes components; no 
   (admin)/layout.tsx         Wraps every admin page in <AdminShell> (sidebar + header + providers)
   (admin)/page.tsx           /                 Overview
   (admin)/companies/page.tsx /companies        Companies list
+  (admin)/inbox/page.tsx     /inbox            Social inbox (pick a company)
   (admin)/companies/[id]/    /companies/:id    Company details — layout.tsx holds the header, tabs
                              and access check; one page per tab:
-                             page.tsx (Overview), activities/, courses/, bookings/, team/, settings/
+                             page.tsx (Overview), activities/, courses/, bookings/, inbox/, team/,
+                             settings/ (company profile + connected social accounts)
 
 components/
   ui/                        shadcn primitives (Button, Card, Select, Dialog…). Don't put app logic here.
@@ -32,6 +34,8 @@ components/
   companies/                 Widgets used only on the Companies pages
   catalog/                   Activities & courses: CatalogManager, ActivityForm/CourseForm,
                              ActivityTable/CourseTable, preview dialog
+  inbox/                     Social inbox: InboxView (conversations, thread, reply box),
+                             SocialChannelsCard (connect Facebook / Instagram / WhatsApp)
 
 hooks/                       Data hooks (useDemoResult, useDashboardData)
 lib/                         Logic with no UI

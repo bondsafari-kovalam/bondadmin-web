@@ -1,2 +1,2 @@
 
-export const cardClass = 'border-slate-100 shadow-[0_4px_20px_-6px_rgba(38,64,60,0.08)]'
+export const cardClass = 'rounded-3xl bg-white/90 ring-white/70 shadow-[0_10px_32px_-14px_rgba(10,74,82,0.18)]'

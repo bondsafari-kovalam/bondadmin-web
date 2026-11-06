@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react'
+import { CompanyAvatar } from '@/components/companies/company-avatar'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { count, money, percent } from '@/lib/format'
 import { cn } from '@/lib/utils'
@@ -34,7 +35,7 @@ export function CompanyPerformanceTable({ rows, showRevenue, onSelect }: { rows:
       {sorted.map((row) => <TableRow key={row.company.id} onClick={() => onSelect(row.company.id)} className="cursor-pointer border-slate-50 hover:bg-gold-soft/40">
         <TableCell className="px-6 py-3">
           <button type="button" onClick={(e) => { e.stopPropagation(); onSelect(row.company.id) }} className="flex items-center gap-2.5 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/50" aria-label={`Show ${row.company.name} only`}>
-            <span className="flex size-9 items-center justify-center rounded-xl text-[10px] font-bold text-white" style={{ backgroundColor: row.company.color }}>{row.company.code}</span>
+            <CompanyAvatar company={row.company} />
             <span><span className="block font-semibold text-slate-700">{row.company.name}</span><span className="block text-[11px] text-slate-400">{row.company.category}</span></span>
           </button>
         </TableCell>

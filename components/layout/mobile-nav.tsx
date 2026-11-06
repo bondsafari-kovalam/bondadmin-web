@@ -10,7 +10,7 @@ export function MobileNav({ user, scopeLabel }: { user: DemoUser, scopeLabel: st
   const [open, setOpen] = useState(false)
   return <Sheet open={open} onOpenChange={setOpen}>
     <SheetTrigger aria-label="Open navigation" className="flex size-9 items-center justify-center rounded-xl bg-forest text-white shadow-sm lg:hidden"><Menu className="size-4" /></SheetTrigger>
-    <SheetContent side="left" className="w-[280px] gap-0 border-0 bg-forest p-0 text-white">
+    <SheetContent side="left" className="sidebar-surface w-[280px] gap-0 border-0 p-0 text-white">
       <SheetTitle className="sr-only">Navigation</SheetTitle>
       <div className="shrink-0 px-6 pt-5 pb-4"><Logo /></div>
       <div className="min-h-0 flex-1 overflow-y-auto pb-6">

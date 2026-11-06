@@ -5,15 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --color-ink: #26403c;
-  --color-forest: #3e5b56;
-  --color-forest-dark: #2f4642;
-  --color-forest-light: #557670;
+  --color-ink: #0f2f3a;
+  --color-forest: #0a4a52;
+  --color-forest-dark: #06333a;
+  --color-forest-light: #0f6b72;
   --color-gold: #d4a42e;
   --color-gold-dark: #9a7414;
   --color-gold-soft: #f8efd8;
   --color-sea: #1fb2a6;
-  --color-mint: #e7eeec;
+  --color-mint: #f1f9f7;
   --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -57,37 +57,37 @@
 
 :root {
   color-scheme: light;
-  /* Brand: forest #3e5b56, gold #d4a42e, sea #1fb2a6 on mint #e7eeec */
-  --background: #e7eeec;
-  --foreground: #26403c;
+  /* Brand: deep teal #0a4a52, gold #d4a42e, sea #1fb2a6 on mint #f1f9f7 */
+  --background: #f1f9f7;
+  --foreground: #0f2f3a;
   --card: #ffffff;
-  --card-foreground: #26403c;
+  --card-foreground: #0f2f3a;
   --popover: #ffffff;
-  --popover-foreground: #26403c;
-  --primary: #3e5b56;
+  --popover-foreground: #0f2f3a;
+  --primary: #0a4a52;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f4;
-  --secondary-foreground: #3e5b56;
-  --muted: #f1f5f4;
-  --muted-foreground: #6b7f7b;
+  --secondary: #eef8f6;
+  --secondary-foreground: #0a4a52;
+  --muted: #eef8f6;
+  --muted-foreground: #5f7a80;
   --accent: #f8efd8;
   --accent-foreground: #9a7414;
   --destructive: #dc2626;
-  --border: #dde6e3;
-  --input: #dde6e3;
+  --border: #dcebe8;
+  --input: #dcebe8;
   --ring: #d4a42e;
   --chart-1: #d4a42e;
-  --chart-2: #3e5b56;
+  --chart-2: #0a4a52;
   --chart-3: #1fb2a6;
   --chart-4: #1b8fb5;
   --chart-5: #9aaea8;
   --radius: 0.875rem;
-  --sidebar: #3e5b56;
+  --sidebar: #0a4a52;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #d4a42e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e7eeec;
-  --sidebar-accent-foreground: #3e5b56;
+  --sidebar-accent: #f1f9f7;
+  --sidebar-accent-foreground: #0a4a52;
   --sidebar-border: rgb(255 255 255 / 0.1);
   --sidebar-ring: #d4a42e;
 }
@@ -127,6 +127,27 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+
+@layer components {
+  /* Soft mint and peach wash behind every admin page. */
+  .app-canvas {
+    background-color: var(--color-mint);
+    background-image:
+      radial-gradient(60rem 36rem at 12% -10%, rgb(45 212 191 / 0.14), transparent 65%),
+      radial-gradient(52rem 32rem at 70% 0%, rgb(251 191 146 / 0.22), transparent 60%),
+      radial-gradient(60rem 40rem at 100% 100%, rgb(125 211 252 / 0.14), transparent 60%);
+    background-attachment: fixed;
+  }
+  /* Deep teal panel with faint contour lines in the lower corner. */
+  .sidebar-surface {
+    background-color: var(--color-forest-dark);
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='420' fill='none' stroke='%235eead4' stroke-opacity='.1'%3E%3Cpath d='M300 40C170 90 90 200 60 420'/%3E%3Cpath d='M300 100C200 140 130 240 110 420'/%3E%3Cpath d='M300 160C230 195 175 280 160 420'/%3E%3Cpath d='M300 220C260 250 220 320 210 420'/%3E%3C/svg%3E"),
+      linear-gradient(170deg, #0b525a 0%, #07393f 55%, #052c32 100%);
+    background-position: right bottom, center;
+    background-repeat: no-repeat;
+  }
+}
 
 @layer base {
   * {

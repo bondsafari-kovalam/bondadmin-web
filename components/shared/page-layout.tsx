@@ -8,7 +8,7 @@ export function PageContainer({ children, className }: { children: ReactNode, cl
 
 /** Pill that marks sample data until the backend is connected. */
 export function DemoBadge() {
-  return <span className="rounded-full bg-gold-soft px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-gold-dark">Demo data</span>
+  return <span className="rounded-full bg-sea/15 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-forest">Demo data</span>
 }
 
 interface PageHeaderProps {
@@ -30,7 +30,7 @@ export function PageHeader({ title, description, meta, actions, leading, badges 
       {leading}
       <div className="min-w-0">
         <div className="mb-2 flex flex-wrap items-center gap-2">{badges}<DemoBadge />{meta && <span className="text-xs text-slate-400">{meta}</span>}</div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink md:text-3xl">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-ink md:text-[34px] md:leading-tight">{title}</h1>
         {description && <p className="mt-1 text-sm text-slate-500">{description}</p>}
       </div>
     </div>

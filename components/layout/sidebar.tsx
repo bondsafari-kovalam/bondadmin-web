@@ -13,7 +13,7 @@ import type { DemoUser } from '@/types/dashboard'
 export function Sidebar({ user, scopeLabel }: { user: DemoUser, scopeLabel: string }) {
   const [collapsed, setCollapsed] = useState(false)
   const Toggle = collapsed ? PanelLeftOpen : PanelLeftClose
-  return <aside className={cn('sticky top-4 my-4 ml-4 hidden h-[calc(100vh-2rem)] shrink-0 flex-col rounded-[28px] bg-forest text-white shadow-[0_24px_48px_-24px_rgba(38,64,60,0.6)] transition-[width] lg:flex', collapsed ? 'w-[88px]' : 'w-[264px]')}>
+  return <aside className={cn('sidebar-surface sticky top-0 hidden h-screen shrink-0 flex-col rounded-r-[28px] text-white shadow-[0_24px_48px_-24px_rgba(6,51,58,0.7)] transition-[width] lg:flex', collapsed ? 'w-[88px]' : 'w-[280px]')}>
     <div className={cn('flex shrink-0 items-center gap-2 pt-5 pb-4', collapsed ? 'flex-col px-2' : 'justify-between pr-4 pl-6')}>
       <Logo compact={collapsed} />
       <button type="button" onClick={() => setCollapsed(!collapsed)} aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

@@ -1,14 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { Field, textareaClass } from '@/components/shared/form-field'
-import { useCompanies } from '@/components/providers/companies-provider'
+import { ConfirmDialog } from '@/components/shared/confirm-dialog'
+import { CompanyLogoField, type LogoChange } from '@/components/companies/company-logo-field'
+import { useCompanies } from '@/hooks/use-companies'
 import { cn } from '@/lib/utils'
 import { validateCompany, type CompanyErrors as Errors } from '@/lib/validation/company'
+import { toCompany, toCompanyPayload, type CompanyDto } from '@/services/companies.service'
+import { useAppDispatch } from '@/store/hooks'
+import { createCompany, deleteCompany, removeCompanyLogo, updateCompany, uploadCompanyLogo } from '@/store/slices/companies-slice'
 import { businessTypes, type BusinessType, type Company, type CompanyInput, type CompanyStatus } from '@/types/company'
 
 const emptyInput: CompanyInput = { name: '', code: '', category: '' as BusinessType, status: 'Active', description: '', email: '', phone: '', location: '' }
@@ -24,15 +30,26 @@ interface CompanyFormDialogProps {
   onOpenChange: (open: boolean) => void
   /** Company being edited; null to add a new one. */
   company: Company | null
-  /** Whether status and code may be changed (owner only in the demo roles). */
+  /** Whether status and code may be changed (platform permission `companies.manage`). */
   canManageStatus: boolean
-  onSaved: (company: Company, mode: 'added' | 'updated') => void
+  /** Shows the Delete button when editing (platform permission `companies.manage`). */
+  canDelete?: boolean
+  /** `warning` is set when the company saved but its logo change did not. */
+  onSaved: (company: Company, mode: 'added' | 'updated', warning?: string) => void
+  onDeleted?: (company: Company) => void
 }
 
-export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus, onSaved }: CompanyFormDialogProps) {
-  const { companies, addCompany, updateCompany } = useCompanies()
+export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus, canDelete = false, onSaved, onDeleted }: CompanyFormDialogProps) {
+  const { companies } = useCompanies()
+  const dispatch = useAppDispatch()
   const [input, setInput] = useState<CompanyInput>(emptyInput)
   const [errors, setErrors] = useState<Errors>({})
+  const [formError, setFormError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [logo, setLogo] = useState<LogoChange>({ kind: 'keep' })
+  const [logoError, setLogoError] = useState<string | undefined>()
+  const [logoBusy, setLogoBusy] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const editing = company !== null
   const lockIdentity = editing && !canManageStatus
@@ -42,6 +59,9 @@ export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus
     if (!open) return
     setInput(company ? toInput(company) : emptyInput)
     setErrors({})
+    setFormError(null)
+    setLogo({ kind: 'keep' })
+    setLogoError(undefined)
   }, [open, company])
 
   const set = <K extends keyof CompanyInput>(key: K, value: CompanyInput[K]) => {
@@ -49,22 +69,62 @@ export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus
     if (errors[key]) setErrors((current) => ({ ...current, [key]: undefined }))
   }
 
-  const submit = (e: FormEvent) => {
+  const focusField = (key: keyof CompanyInput) => formRef.current?.querySelector<HTMLElement>(`#company-${key}`)?.focus()
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
+    if (submitting || logoBusy) return
     const found = validateCompany(input, companies.filter((c) => c.id !== company?.id))
     setErrors(found)
+    setFormError(null)
     const first = fieldOrder.find((key) => found[key])
-    if (first) {
-      formRef.current?.querySelector<HTMLElement>(`#company-${first}`)?.focus()
+    if (first) return focusField(first)
+
+    setSubmitting(true)
+    // Code and status are sent on create, and on edit only when this user may change them.
+    const payload = toCompanyPayload(input, !company || canManageStatus)
+    const action = company
+      ? await dispatch(updateCompany({ id: company.id, payload }))
+      : await dispatch(createCompany(payload))
+    setSubmitting(false)
+
+    if (createCompany.fulfilled.match(action) || updateCompany.fulfilled.match(action)) {
+      setSubmitting(true)
+      const { saved, warning } = await applyLogo(action.payload)
+      setSubmitting(false)
+      onSaved(toCompany(saved), company ? 'updated' : 'added', warning)
+      onOpenChange(false)
       return
     }
-    if (company) {
-      updateCompany(company.id, input)
-      onSaved({ ...company, name: input.name.trim() }, 'updated')
+    const error = action.payload
+    const serverErrors = (error?.fieldErrors ?? {}) as Errors
+    setErrors(serverErrors)
+    setFormError(error?.message ?? 'Could not save the company. Please try again.')
+    const firstServer = fieldOrder.find((key) => serverErrors[key])
+    if (firstServer) focusField(firstServer)
+  }
+
+  // The logo needs the company id, so it is sent after the company is saved.
+  const applyLogo = async (saved: CompanyDto): Promise<{ saved: CompanyDto, warning?: string }> => {
+    if (logo.kind === 'keep' || (logo.kind === 'remove' && !saved.logoUrl)) return { saved }
+    const result = logo.kind === 'upload'
+      ? await dispatch(uploadCompanyLogo({ id: saved.id, file: logo.file }))
+      : await dispatch(removeCompanyLogo(saved.id))
+    if (uploadCompanyLogo.fulfilled.match(result) || removeCompanyLogo.fulfilled.match(result)) return { saved: result.payload }
+    return { saved, warning: `The logo wasn’t ${logo.kind === 'upload' ? 'uploaded' : 'removed'}: ${result.payload?.message ?? 'please try again.'}` }
+  }
+
+  const remove = async () => {
+    if (!company) return
+    setSubmitting(true)
+    const action = await dispatch(deleteCompany(company.id))
+    setSubmitting(false)
+    if (deleteCompany.fulfilled.match(action)) {
+      onOpenChange(false)
+      onDeleted?.(company)
     } else {
-      onSaved(addCompany(input), 'added')
+      setFormError(action.payload?.message ?? 'Could not delete the company. Please try again.')
     }
-    onOpenChange(false)
   }
 
   const describedBy = (key: keyof CompanyInput, hasHint = false) => (errors[key] ? `company-${key}-error` : hasHint ? `company-${key}-hint` : undefined)
@@ -72,15 +132,18 @@ export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus
     <Input id={`company-${key}`} value={input[key]} onChange={(e) => set(key, key === 'code' ? e.target.value.toUpperCase() : e.target.value)} aria-invalid={!!errors[key]} aria-describedby={describedBy(key, props.hint)}
       type={props.type} placeholder={props.placeholder} disabled={props.disabled} autoComplete={props.autoComplete ?? 'off'} className={cn('h-10 rounded-xl text-sm', props.className)} />
 
-  return <Dialog open={open} onOpenChange={onOpenChange}>
+  return <>
+  <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent className="max-w-lg gap-0 overflow-hidden bg-white p-0">
       <form ref={formRef} onSubmit={submit} noValidate className="flex max-h-[calc(100dvh-2rem)] flex-col">
         <div className="shrink-0 border-b border-slate-100 py-5 pr-14 pl-6">
           <DialogTitle className="text-lg font-semibold text-ink">{editing ? `Edit ${company.name}` : 'Add company'}</DialogTitle>
-          <DialogDescription className="mt-1 text-xs text-slate-500">Demo only — changes are kept in this browser session and are not saved to a server.</DialogDescription>
+          <DialogDescription className="mt-1 text-xs text-slate-500">{editing ? 'Changes are saved to the server for everyone.' : 'The company is saved to the server and visible to every admin with access.'}</DialogDescription>
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-6 py-5">
+          <CompanyLogoField currentUrl={company?.logoUrl} change={logo} onChange={setLogo} error={logoError} onError={setLogoError}
+            code={input.code.trim().toUpperCase()} color={company?.color ?? '#0a4a52'} disabled={submitting} onBusyChange={setLogoBusy} />
           <Field id="company-name" label="Company name" required error={errors.name}>{textInput('name', { placeholder: 'e.g. Reef Divers' })}</Field>
           <div className="grid grid-cols-2 gap-3">
             <Field id="company-code" label="Code" required error={errors.code} hint={lockIdentity ? 'Only the owner can change this.' : '2–5 characters, unique.'}>{textInput('code', { placeholder: 'RD', disabled: lockIdentity, hint: true, className: 'uppercase' })}</Field>
@@ -106,14 +169,18 @@ export function CompanyFormDialog({ open, onOpenChange, company, canManageStatus
             <textarea id="company-description" value={input.description} onChange={(e) => set('description', e.target.value)} rows={3} aria-invalid={!!errors.description} aria-describedby={describedBy('description', true)}
               className={textareaClass} placeholder="What the company offers" />
           </Field>
-          {Object.values(errors).some(Boolean) && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">Please fix the highlighted fields.</p>}
+          {(formError || Object.values(errors).some(Boolean)) && <p role="alert" className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{formError ?? 'Please fix the highlighted fields.'}</p>}
         </div>
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-slate-100 px-6 py-4">
-          <Button type="button" variant="outline" className="h-10 rounded-full px-5 text-xs" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button type="submit" className="h-10 rounded-full bg-forest px-5 text-xs hover:bg-forest-light">{editing ? 'Save changes' : 'Add company'}</Button>
+        <div className="flex shrink-0 items-center gap-2 border-t border-slate-100 px-6 py-4">
+          {editing && canDelete && <Button type="button" variant="outline" disabled={submitting} className="h-10 rounded-full border-red-200 px-4 text-xs text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setConfirmDelete(true)}><Trash2 data-icon="inline-start" />Delete</Button>}
+          <Button type="button" variant="outline" disabled={submitting} className="ml-auto h-10 rounded-full px-5 text-xs" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button type="submit" disabled={submitting || logoBusy} className="h-10 rounded-full bg-forest px-5 text-xs hover:bg-forest-light">{submitting ? 'Saving…' : editing ? 'Save changes' : 'Add company'}</Button>
         </div>
       </form>
     </DialogContent>
   </Dialog>
+  {company && <ConfirmDialog open={confirmDelete} onOpenChange={setConfirmDelete} destructive confirmLabel="Delete company" onConfirm={() => void remove()}
+      title={`Delete ${company.name}?`} description="This permanently removes the company and all of its team memberships. This can’t be undone." />}
+  </>
 }

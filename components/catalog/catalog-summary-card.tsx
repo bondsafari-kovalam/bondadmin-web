@@ -3,8 +3,8 @@
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Compass, type LucideIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { useCatalog } from '@/components/providers/catalog-provider'
 import { cardClass } from '@/components/shared/card-styles'
+import { useCatalog } from '@/hooks/use-catalog'
 import { formatPrice, itemsFor } from '@/lib/catalog'
 import type { CatalogItem } from '@/types/catalog'
 import type { Company } from '@/types/company'
@@ -26,11 +26,15 @@ function Group({ icon: Icon, title, items, href, empty }: { icon: LucideIcon, ti
 
 /** Activities & courses at a glance, with links to the management tabs. */
 export function CatalogSummaryCard({ company }: { company: Company }) {
-  const { items } = useCatalog()
+  const { items, loading, error } = useCatalog(company.id)
   const base = `/companies/${encodeURIComponent(company.id)}`
   return <Card className={cardClass}><CardContent className="flex flex-col gap-5 px-6 py-1">
     <h2 className="text-[15px] font-semibold text-ink">Activities &amp; courses</h2>
-    <Group icon={Compass} title="Activities" items={itemsFor(items, company.id, 'activity')} href={`${base}/activities`} empty="No activities yet." />
-    <Group icon={BookOpen} title="Courses" items={itemsFor(items, company.id, 'course')} href={`${base}/courses`} empty="No courses yet." />
+    {loading ? <p role="status" className="text-xs text-slate-400">Loading…</p>
+      : error ? <p role="alert" className="text-xs text-red-600">Couldn’t load activities and courses: {error.message}</p>
+      : <>
+        <Group icon={Compass} title="Activities" items={itemsFor(items, company.id, 'activity')} href={`${base}/activities`} empty="No activities yet." />
+        <Group icon={BookOpen} title="Courses" items={itemsFor(items, company.id, 'course')} href={`${base}/courses`} empty="No courses yet." />
+      </>}
   </CardContent></Card>
 }
