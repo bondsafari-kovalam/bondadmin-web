@@ -22,7 +22,7 @@ export function FaqEditor({ id, values, onChange, max, describedBy, invalid }: F
   return <div className="flex flex-col gap-2">
     {values.length > 0 && <ol className="flex flex-col gap-3" aria-describedby={describedBy}>
       {values.map((faq, i) => <li key={i} className="flex items-start gap-2">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5 lg:grid lg:grid-cols-2 lg:gap-3">
           <Input id={i === 0 ? id : undefined} aria-label={`Question ${i + 1}`} aria-invalid={invalid || undefined} value={faq.question} placeholder="Question"
             onChange={(e) => update(i, { question: e.target.value })} className="h-10 rounded-xl text-sm" />
           <textarea aria-label={`Answer ${i + 1}`} rows={2} value={faq.answer} placeholder="Answer" onChange={(e) => update(i, { answer: e.target.value })} className={textareaClass} />
